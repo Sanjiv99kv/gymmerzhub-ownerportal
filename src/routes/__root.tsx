@@ -4,12 +4,8 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
-
-import appCss from "../styles.css?url";
+import { useEffect } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/topbar";
@@ -64,51 +60,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport",           content: "width=device-width, initial-scale=1" },
-      { title:                      "FitSaathi — Smart Gym Management" },
-      { name: "description",        content: "FitSaathi is a modern gym management platform for members, attendance, payments, revenue analytics, workout plans and nutrition." },
-      { name: "application-name",   content: "FitSaathi" },
-      { name: "author",             content: "FitSaathi" },
-      { name: "theme-color",        content: "#f97316" },
-      { property: "og:site_name",   content: "FitSaathi" },
-      { property: "og:title",       content: "FitSaathi — Smart Gym Management" },
-      { property: "og:description", content: "Modern gym management: members, attendance, payments, revenue, workout & diet plans." },
-      { property: "og:type",        content: "website" },
-      { name: "twitter:card",       content: "summary" },
-      { name: "twitter:title",      content: "FitSaathi — Smart Gym Management" },
-      { name: "twitter:description",content: "Modern gym management platform." },
-    ],
-    links: [
-      { rel: "stylesheet",  href: appCss },
-      { rel: "icon",        href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "apple-touch-icon", href: "/favicon.svg" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet",  href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en" className="dark">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
