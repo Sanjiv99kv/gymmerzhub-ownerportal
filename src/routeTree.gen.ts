@@ -9,141 +9,187 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WorkoutsRouteImport } from './routes/workouts'
-import { Route as TrainersRouteImport } from './routes/trainers'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as RevenueRouteImport } from './routes/revenue'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as PlansRouteImport } from './routes/plans'
-import { Route as PaymentsRouteImport } from './routes/payments'
-import { Route as NoticesRouteImport } from './routes/notices'
-import { Route as DietRouteImport } from './routes/diet'
-import { Route as AttendanceRouteImport } from './routes/attendance'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as MembersIndexRouteImport } from './routes/members.index'
-import { Route as MembersIdRouteImport } from './routes/members.$id'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppWorkoutsRouteImport } from './routes/_app/workouts'
+import { Route as AppTrainersRouteImport } from './routes/_app/trainers'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppRevenueRouteImport } from './routes/_app/revenue'
+import { Route as AppReportsRouteImport } from './routes/_app/reports'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppPlansRouteImport } from './routes/_app/plans'
+import { Route as AppPaymentsRouteImport } from './routes/_app/payments'
+import { Route as AppNoticesRouteImport } from './routes/_app/notices'
+import { Route as AppDietRouteImport } from './routes/_app/diet'
+import { Route as AppBillingRouteImport } from './routes/_app/billing'
+import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
+import { Route as AppMembersIndexRouteImport } from './routes/_app/members.index'
+import { Route as AppMembersIdRouteImport } from './routes/_app/members.$id'
 
-const WorkoutsRoute = WorkoutsRouteImport.update({
-  id: '/workouts',
-  path: '/workouts',
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TrainersRoute = TrainersRouteImport.update({
-  id: '/trainers',
-  path: '/trainers',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RevenueRoute = RevenueRouteImport.update({
-  id: '/revenue',
-  path: '/revenue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlansRoute = PlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PaymentsRoute = PaymentsRouteImport.update({
-  id: '/payments',
-  path: '/payments',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NoticesRoute = NoticesRouteImport.update({
-  id: '/notices',
-  path: '/notices',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DietRoute = DietRouteImport.update({
-  id: '/diet',
-  path: '/diet',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AttendanceRoute = AttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const MembersIndexRoute = MembersIndexRouteImport.update({
+const AppWorkoutsRoute = AppWorkoutsRouteImport.update({
+  id: '/workouts',
+  path: '/workouts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTrainersRoute = AppTrainersRouteImport.update({
+  id: '/trainers',
+  path: '/trainers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRevenueRoute = AppRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPlansRoute = AppPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPaymentsRoute = AppPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNoticesRoute = AppNoticesRouteImport.update({
+  id: '/notices',
+  path: '/notices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDietRoute = AppDietRouteImport.update({
+  id: '/diet',
+  path: '/diet',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBillingRoute = AppBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAttendanceRoute = AppAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMembersIndexRoute = AppMembersIndexRouteImport.update({
   id: '/members/',
   path: '/members/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const MembersIdRoute = MembersIdRouteImport.update({
+const AppMembersIdRoute = AppMembersIdRouteImport.update({
   id: '/members/$id',
   path: '/members/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/attendance': typeof AttendanceRoute
-  '/diet': typeof DietRoute
-  '/notices': typeof NoticesRoute
-  '/payments': typeof PaymentsRoute
-  '/plans': typeof PlansRoute
-  '/reports': typeof ReportsRoute
-  '/revenue': typeof RevenueRoute
-  '/settings': typeof SettingsRoute
-  '/trainers': typeof TrainersRoute
-  '/workouts': typeof WorkoutsRoute
-  '/members/$id': typeof MembersIdRoute
-  '/members/': typeof MembersIndexRoute
+  '/': typeof AppIndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/attendance': typeof AppAttendanceRoute
+  '/billing': typeof AppBillingRoute
+  '/diet': typeof AppDietRoute
+  '/notices': typeof AppNoticesRoute
+  '/payments': typeof AppPaymentsRoute
+  '/plans': typeof AppPlansRoute
+  '/profile': typeof AppProfileRoute
+  '/reports': typeof AppReportsRoute
+  '/revenue': typeof AppRevenueRoute
+  '/settings': typeof AppSettingsRoute
+  '/trainers': typeof AppTrainersRoute
+  '/workouts': typeof AppWorkoutsRoute
+  '/members/$id': typeof AppMembersIdRoute
+  '/members/': typeof AppMembersIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/attendance': typeof AttendanceRoute
-  '/diet': typeof DietRoute
-  '/notices': typeof NoticesRoute
-  '/payments': typeof PaymentsRoute
-  '/plans': typeof PlansRoute
-  '/reports': typeof ReportsRoute
-  '/revenue': typeof RevenueRoute
-  '/settings': typeof SettingsRoute
-  '/trainers': typeof TrainersRoute
-  '/workouts': typeof WorkoutsRoute
-  '/members/$id': typeof MembersIdRoute
-  '/members': typeof MembersIndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/attendance': typeof AppAttendanceRoute
+  '/billing': typeof AppBillingRoute
+  '/diet': typeof AppDietRoute
+  '/notices': typeof AppNoticesRoute
+  '/payments': typeof AppPaymentsRoute
+  '/plans': typeof AppPlansRoute
+  '/profile': typeof AppProfileRoute
+  '/reports': typeof AppReportsRoute
+  '/revenue': typeof AppRevenueRoute
+  '/settings': typeof AppSettingsRoute
+  '/trainers': typeof AppTrainersRoute
+  '/workouts': typeof AppWorkoutsRoute
+  '/': typeof AppIndexRoute
+  '/members/$id': typeof AppMembersIdRoute
+  '/members': typeof AppMembersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/attendance': typeof AttendanceRoute
-  '/diet': typeof DietRoute
-  '/notices': typeof NoticesRoute
-  '/payments': typeof PaymentsRoute
-  '/plans': typeof PlansRoute
-  '/reports': typeof ReportsRoute
-  '/revenue': typeof RevenueRoute
-  '/settings': typeof SettingsRoute
-  '/trainers': typeof TrainersRoute
-  '/workouts': typeof WorkoutsRoute
-  '/members/$id': typeof MembersIdRoute
-  '/members/': typeof MembersIndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/_app/attendance': typeof AppAttendanceRoute
+  '/_app/billing': typeof AppBillingRoute
+  '/_app/diet': typeof AppDietRoute
+  '/_app/notices': typeof AppNoticesRoute
+  '/_app/payments': typeof AppPaymentsRoute
+  '/_app/plans': typeof AppPlansRoute
+  '/_app/profile': typeof AppProfileRoute
+  '/_app/reports': typeof AppReportsRoute
+  '/_app/revenue': typeof AppRevenueRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/trainers': typeof AppTrainersRoute
+  '/_app/workouts': typeof AppWorkoutsRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/members/$id': typeof AppMembersIdRoute
+  '/_app/members/': typeof AppMembersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/register'
     | '/attendance'
+    | '/billing'
     | '/diet'
     | '/notices'
     | '/payments'
     | '/plans'
+    | '/profile'
     | '/reports'
     | '/revenue'
     | '/settings'
@@ -153,162 +199,224 @@ export interface FileRouteTypes {
     | '/members/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/login'
+    | '/register'
     | '/attendance'
+    | '/billing'
     | '/diet'
     | '/notices'
     | '/payments'
     | '/plans'
+    | '/profile'
     | '/reports'
     | '/revenue'
     | '/settings'
     | '/trainers'
     | '/workouts'
+    | '/'
     | '/members/$id'
     | '/members'
   id:
     | '__root__'
-    | '/'
-    | '/attendance'
-    | '/diet'
-    | '/notices'
-    | '/payments'
-    | '/plans'
-    | '/reports'
-    | '/revenue'
-    | '/settings'
-    | '/trainers'
-    | '/workouts'
-    | '/members/$id'
-    | '/members/'
+    | '/_app'
+    | '/login'
+    | '/register'
+    | '/_app/attendance'
+    | '/_app/billing'
+    | '/_app/diet'
+    | '/_app/notices'
+    | '/_app/payments'
+    | '/_app/plans'
+    | '/_app/profile'
+    | '/_app/reports'
+    | '/_app/revenue'
+    | '/_app/settings'
+    | '/_app/trainers'
+    | '/_app/workouts'
+    | '/_app/'
+    | '/_app/members/$id'
+    | '/_app/members/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AttendanceRoute: typeof AttendanceRoute
-  DietRoute: typeof DietRoute
-  NoticesRoute: typeof NoticesRoute
-  PaymentsRoute: typeof PaymentsRoute
-  PlansRoute: typeof PlansRoute
-  ReportsRoute: typeof ReportsRoute
-  RevenueRoute: typeof RevenueRoute
-  SettingsRoute: typeof SettingsRoute
-  TrainersRoute: typeof TrainersRoute
-  WorkoutsRoute: typeof WorkoutsRoute
-  MembersIdRoute: typeof MembersIdRoute
-  MembersIndexRoute: typeof MembersIndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/workouts': {
-      id: '/workouts'
-      path: '/workouts'
-      fullPath: '/workouts'
-      preLoaderRoute: typeof WorkoutsRouteImport
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/trainers': {
-      id: '/trainers'
-      path: '/trainers'
-      fullPath: '/trainers'
-      preLoaderRoute: typeof TrainersRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/revenue': {
-      id: '/revenue'
-      path: '/revenue'
-      fullPath: '/revenue'
-      preLoaderRoute: typeof RevenueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plans': {
-      id: '/plans'
-      path: '/plans'
-      fullPath: '/plans'
-      preLoaderRoute: typeof PlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/payments': {
-      id: '/payments'
-      path: '/payments'
-      fullPath: '/payments'
-      preLoaderRoute: typeof PaymentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notices': {
-      id: '/notices'
-      path: '/notices'
-      fullPath: '/notices'
-      preLoaderRoute: typeof NoticesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/diet': {
-      id: '/diet'
-      path: '/diet'
-      fullPath: '/diet'
-      preLoaderRoute: typeof DietRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/attendance': {
-      id: '/attendance'
-      path: '/attendance'
-      fullPath: '/attendance'
-      preLoaderRoute: typeof AttendanceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/members/': {
-      id: '/members/'
+    '/_app/workouts': {
+      id: '/_app/workouts'
+      path: '/workouts'
+      fullPath: '/workouts'
+      preLoaderRoute: typeof AppWorkoutsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/trainers': {
+      id: '/_app/trainers'
+      path: '/trainers'
+      fullPath: '/trainers'
+      preLoaderRoute: typeof AppTrainersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/revenue': {
+      id: '/_app/revenue'
+      path: '/revenue'
+      fullPath: '/revenue'
+      preLoaderRoute: typeof AppRevenueRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/plans': {
+      id: '/_app/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AppPlansRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/payments': {
+      id: '/_app/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AppPaymentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notices': {
+      id: '/_app/notices'
+      path: '/notices'
+      fullPath: '/notices'
+      preLoaderRoute: typeof AppNoticesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/diet': {
+      id: '/_app/diet'
+      path: '/diet'
+      fullPath: '/diet'
+      preLoaderRoute: typeof AppDietRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/billing': {
+      id: '/_app/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AppBillingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/attendance': {
+      id: '/_app/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AppAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/members/': {
+      id: '/_app/members/'
       path: '/members'
       fullPath: '/members/'
-      preLoaderRoute: typeof MembersIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppMembersIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/members/$id': {
-      id: '/members/$id'
+    '/_app/members/$id': {
+      id: '/_app/members/$id'
       path: '/members/$id'
       fullPath: '/members/$id'
-      preLoaderRoute: typeof MembersIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppMembersIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppAttendanceRoute: typeof AppAttendanceRoute
+  AppBillingRoute: typeof AppBillingRoute
+  AppDietRoute: typeof AppDietRoute
+  AppNoticesRoute: typeof AppNoticesRoute
+  AppPaymentsRoute: typeof AppPaymentsRoute
+  AppPlansRoute: typeof AppPlansRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppReportsRoute: typeof AppReportsRoute
+  AppRevenueRoute: typeof AppRevenueRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppTrainersRoute: typeof AppTrainersRoute
+  AppWorkoutsRoute: typeof AppWorkoutsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppMembersIdRoute: typeof AppMembersIdRoute
+  AppMembersIndexRoute: typeof AppMembersIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAttendanceRoute: AppAttendanceRoute,
+  AppBillingRoute: AppBillingRoute,
+  AppDietRoute: AppDietRoute,
+  AppNoticesRoute: AppNoticesRoute,
+  AppPaymentsRoute: AppPaymentsRoute,
+  AppPlansRoute: AppPlansRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppReportsRoute: AppReportsRoute,
+  AppRevenueRoute: AppRevenueRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppTrainersRoute: AppTrainersRoute,
+  AppWorkoutsRoute: AppWorkoutsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppMembersIdRoute: AppMembersIdRoute,
+  AppMembersIndexRoute: AppMembersIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AttendanceRoute: AttendanceRoute,
-  DietRoute: DietRoute,
-  NoticesRoute: NoticesRoute,
-  PaymentsRoute: PaymentsRoute,
-  PlansRoute: PlansRoute,
-  ReportsRoute: ReportsRoute,
-  RevenueRoute: RevenueRoute,
-  SettingsRoute: SettingsRoute,
-  TrainersRoute: TrainersRoute,
-  WorkoutsRoute: WorkoutsRoute,
-  MembersIdRoute: MembersIdRoute,
-  MembersIndexRoute: MembersIndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

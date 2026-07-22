@@ -41,21 +41,21 @@ import {
   revenueByPlan, discountUsage, renewalConversion, membershipHistorySample,
   type MembershipPlan, type Discount, type DurationUnit,
 } from "@/lib/data";
+import {
+  chartTooltipStyle as tooltipStyle,
+  chartGrid,
+  chartCursor,
+  chartAxis,
+  chartColors,
+  pieColors as PIE_COLORS,
+} from "@/lib/chart-theme";
 
-export const Route = createFileRoute("/plans")({
+export const Route = createFileRoute("/_app/plans")({
   head: () => ({ meta: [{ title: "Membership Management — FitSaathi" }] }),
   component: PlansPage,
 });
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
-const tooltipStyle = {
-  backgroundColor: "oklch(0.17 0 0)",
-  border: "1px solid oklch(1 0 0 / 10%)",
-  borderRadius: 10,
-  color: "white",
-  fontSize: 12,
-};
-const PIE_COLORS = ["oklch(0.72 0.21 45)", "oklch(0.92 0.24 130)", "oklch(0.75 0.18 200)", "oklch(0.8 0.18 320)", "oklch(0.85 0.18 90)", "oklch(0.7 0.18 0)"];
 
 function durationLabel(v: number, u: DurationUnit) {
   const unit = v === 1 ? u.slice(0, -1) : u;
@@ -1057,11 +1057,11 @@ function AnalyticsSection() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={revenueByPlan}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 8%)" />
-                <XAxis dataKey="name" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(1 0 0 / 5%)" }} />
-                <Bar dataKey="revenue" fill="oklch(0.72 0.21 45)" radius={[6, 6, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                <XAxis dataKey="name" stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: chartCursor }} />
+                <Bar dataKey="revenue" fill={chartColors.primary} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -1095,11 +1095,11 @@ function AnalyticsSection() {
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={renewalConversion}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 8%)" />
-                <XAxis dataKey="m" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} domain={[50, 90]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                <XAxis dataKey="m" stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} domain={[50, 90]} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Line type="monotone" dataKey="rate" stroke="oklch(0.92 0.24 130)" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="rate" stroke={chartColors.secondary} strokeWidth={2.5} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>

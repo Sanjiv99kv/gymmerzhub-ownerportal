@@ -15,21 +15,19 @@ import { KpiCard } from "@/components/kpi-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { revenueData, membershipGrowth, revenueByPlan, payments } from "@/lib/data";
+import {
+  chartTooltipStyle as TT,
+  chartGrid,
+  chartCursor,
+  chartAxis,
+  chartColors,
+  pieColors as PIE_COLORS,
+} from "@/lib/chart-theme";
 
-export const Route = createFileRoute("/revenue")({
+export const Route = createFileRoute("/_app/revenue")({
   head: () => ({ meta: [{ title: "Revenue Analytics — FitSaathi" }] }),
   component: RevenuePage,
 });
-
-// ── Tooltip style ──────────────────────────────────────────────────────────
-
-const TT = {
-  backgroundColor: "oklch(0.17 0 0)",
-  border: "1px solid oklch(1 0 0 / 12%)",
-  borderRadius: 10,
-  color: "white",
-  fontSize: 12,
-};
 
 // ── Derived / enriched data ────────────────────────────────────────────────
 
@@ -48,15 +46,6 @@ const combined = enriched.map((d, i) => ({
   members: membershipGrowth[i]?.members ?? 0,
   target: d.target,
 }));
-
-const PIE_COLORS = [
-  "oklch(0.72 0.21 45)",
-  "oklch(0.92 0.24 130)",
-  "oklch(0.75 0.18 200)",
-  "oklch(0.8 0.18 320)",
-  "oklch(0.85 0.18 90)",
-  "oklch(0.7 0.18 0)",
-];
 
 const totalRev    = revenueData.reduce((s, d) => s + d.revenue, 0) * 1000;
 const prevRev     = Math.round(totalRev * 0.82);
@@ -202,17 +191,17 @@ function RevenuePage() {
                 <AreaChart data={slicedEnriched}>
                   <defs>
                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="oklch(0.72 0.21 45)" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="oklch(0.72 0.21 45)" stopOpacity={0}    />
+                      <stop offset="5%"  stopColor={chartColors.primary} stopOpacity={0.35} />
+                      <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}    />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 7%)" />
-                  <XAxis dataKey="m" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                  <XAxis dataKey="m" stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip content={<RevTooltip />} />
-                  <ReferenceLine y={maxRev} stroke="oklch(1 0 0 / 15%)" strokeDasharray="4 3" label={{ value: "Peak", fill: "#888", fontSize: 10 }} />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="oklch(0.72 0.21 45)" strokeWidth={2.5} fill="url(#revGrad)" dot={{ r: 3, fill: "oklch(0.72 0.21 45)" }} activeDot={{ r: 5 }} />
-                  <Area type="monotone" dataKey="target"  name="Target"  stroke="oklch(1 0 0 / 30%)"  strokeWidth={1.5} fill="none" strokeDasharray="5 3" dot={false} />
+                  <ReferenceLine y={maxRev} stroke={chartGrid} strokeDasharray="4 3" label={{ value: "Peak", fill: "#888", fontSize: 10 }} />
+                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke={chartColors.primary} strokeWidth={2.5} fill="url(#revGrad)" dot={{ r: 3, fill: chartColors.primary }} activeDot={{ r: 5 }} />
+                  <Area type="monotone" dataKey="target"  name="Target"  stroke={chartColors.muted}  strokeWidth={1.5} fill="none" strokeDasharray="5 3" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
               <div className="mt-2 flex items-center gap-4 text-[11px] text-muted-foreground">
@@ -268,14 +257,14 @@ function RevenuePage() {
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={slicedProfit} barSize={16}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 7%)" />
-                  <XAxis dataKey="m" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={TT} cursor={{ fill: "oklch(1 0 0 / 5%)" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                  <XAxis dataKey="m" stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={TT} cursor={{ fill: chartCursor }} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
-                  <Bar dataKey="Revenue"  fill="oklch(0.72 0.21 45)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Expenses" fill="oklch(0.7 0.18 0)"   radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Profit"   fill="oklch(0.92 0.24 130)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Revenue"  fill={chartColors.primary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Expenses" fill={chartColors.muted}   radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Profit"   fill={chartColors.secondary} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -290,14 +279,14 @@ function RevenuePage() {
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={slicedCombined}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 7%)" />
-                  <XAxis dataKey="m" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis yAxisId="left"  stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                  <XAxis dataKey="m" stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis yAxisId="left"  stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis yAxisId="right" orientation="right" stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip content={<GrowthTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
-                  <Line yAxisId="left"  type="monotone" dataKey="revenue" name="Revenue" stroke="oklch(0.72 0.21 45)" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="members" name="Members" stroke="oklch(0.92 0.24 130)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} strokeDasharray="5 3" />
+                  <Line yAxisId="left"  type="monotone" dataKey="revenue" name="Revenue" stroke={chartColors.primary} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="members" name="Members" stroke={chartColors.secondary} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} strokeDasharray="5 3" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { notices } from "@/lib/data";
 
-export const Route = createFileRoute("/notices")({
+export const Route = createFileRoute("/_app/notices")({
   head: () => ({ meta: [{ title: "Notices — FitSaathi" }] }),
   component: NoticesPage,
 });

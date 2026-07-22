@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { trainers } from "@/lib/data";
 
-export const Route = createFileRoute("/trainers")({
+export const Route = createFileRoute("/_app/trainers")({
   head: () => ({ meta: [{ title: "Trainers — FitSaathi" }] }),
   component: TrainersPage,
 });

@@ -16,8 +16,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { members } from "@/lib/data";
+import {
+  chartTooltipStyle as tooltipStyle,
+  chartGrid,
+  chartAxis,
+  chartColors,
+} from "@/lib/chart-theme";
 
-export const Route = createFileRoute("/members/$id")({
+export const Route = createFileRoute("/_app/members/$id")({
   loader: ({ params }) => {
     const m = members.find((x) => x.id === params.id);
     if (!m) throw notFound();
@@ -25,14 +31,6 @@ export const Route = createFileRoute("/members/$id")({
   },
   component: MemberDetail,
 });
-
-const tooltipStyle = {
-  backgroundColor: "oklch(0.17 0 0)",
-  border: "1px solid oklch(1 0 0 / 10%)",
-  borderRadius: 10,
-  color: "white",
-  fontSize: 12,
-};
 
 const weightTrend = [
   { m: "Jan", kg: 85 }, { m: "Feb", kg: 83 }, { m: "Mar", kg: 81 },
@@ -501,11 +499,11 @@ function MemberDetail() {
                       <div className="flex-1 rounded-xl border border-border bg-background/30 p-3">
                         <ResponsiveContainer width="100%" height={200}>
                           <LineChart data={weightTrend}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 8%)" />
-                            <XAxis dataKey="m" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                            <XAxis dataKey="m" stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
+                            <YAxis stroke={chartAxis} fontSize={11} tickLine={false} axisLine={false} />
                             <Tooltip contentStyle={tooltipStyle} />
-                            <Line type="monotone" dataKey="kg" stroke="oklch(0.92 0.24 130)" strokeWidth={2.5} dot={{ r: 3 }} />
+                            <Line type="monotone" dataKey="kg" stroke={chartColors.secondary} strokeWidth={2.5} dot={{ r: 3 }} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>

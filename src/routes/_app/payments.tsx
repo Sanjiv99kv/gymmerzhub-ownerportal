@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { payments } from "@/lib/data";
 
-export const Route = createFileRoute("/payments")({
+export const Route = createFileRoute("/_app/payments")({
   head: () => ({ meta: [{ title: "Payments — FitSaathi" }] }),
   component: PaymentsPage,
 });

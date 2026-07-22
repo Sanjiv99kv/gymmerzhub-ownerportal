@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { members } from "@/lib/data";
 
-export const Route = createFileRoute("/members/")({
+export const Route = createFileRoute("/_app/members/")({
   head: () => ({ meta: [{ title: "Members — FitSaathi" }] }),
   component: MembersPage,
 });

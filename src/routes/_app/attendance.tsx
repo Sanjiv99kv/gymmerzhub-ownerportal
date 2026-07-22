@@ -17,21 +17,20 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { attendanceToday, heatmap, members } from "@/lib/data";
+import {
+  chartTooltipStyle as tooltipStyle,
+  chartGrid,
+  chartCursor,
+  chartAxis,
+  chartColors,
+} from "@/lib/chart-theme";
 
-export const Route = createFileRoute("/attendance")({
+export const Route = createFileRoute("/_app/attendance")({
   head: () => ({ meta: [{ title: "Attendance — FitSaathi" }] }),
   component: AttendancePage,
 });
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-const tooltipStyle = {
-  backgroundColor: "oklch(0.17 0 0)",
-  border: "1px solid oklch(1 0 0 / 10%)",
-  borderRadius: 10,
-  color: "white",
-  fontSize: 12,
-};
 
 const peakHours = [
   { hour: "6 AM", count: 42 },
@@ -74,11 +73,11 @@ const ghData: number[][] = Array.from({ length: WEEKS }, (_, w) =>
 );
 
 const cellColors = [
-  "oklch(0.2 0 0)",                                                        // 0 – empty
-  "color-mix(in oklab, oklch(0.72 0.21 45) 22%, oklch(0.15 0 0))",        // 1
-  "color-mix(in oklab, oklch(0.72 0.21 45) 44%, oklch(0.15 0 0))",        // 2
-  "color-mix(in oklab, oklch(0.72 0.21 45) 68%, oklch(0.15 0 0))",        // 3
-  "oklch(0.72 0.21 45)",                                                   // 4 – full
+  "oklch(0.94 0.008 255)",                                                 // 0 – empty
+  "color-mix(in oklab, oklch(0.55 0.19 255) 22%, oklch(0.97 0.005 255))",  // 1
+  "color-mix(in oklab, oklch(0.55 0.19 255) 42%, oklch(0.97 0.005 255))",  // 2
+  "color-mix(in oklab, oklch(0.55 0.19 255) 68%, oklch(0.97 0.005 255))",  // 3
+  "oklch(0.55 0.19 255)",                                                  // 4 – full
 ];
 
 // Which week column each month label sits above
@@ -363,12 +362,12 @@ function AttendancePage() {
             <CardContent>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={peakHours} barSize={20}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 8%)" vertical={false} />
-                  <XAxis dataKey="hour" stroke="#888" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={10} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(1 0 0 / 5%)" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} vertical={false} />
+                  <XAxis dataKey="hour" stroke={chartAxis} fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke={chartAxis} fontSize={10} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: chartCursor }} />
                   <Bar dataKey="count" radius={[6, 6, 0, 0]}
-                    fill="oklch(0.72 0.21 45)"
+                    fill={chartColors.primary}
                     label={false}
                   />
                 </BarChart>
@@ -385,12 +384,12 @@ function AttendancePage() {
             <CardContent>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={weeklyTrend} barSize={16}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 8%)" vertical={false} />
-                  <XAxis dataKey="day" stroke="#888" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={10} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(1 0 0 / 5%)" }} />
-                  <Bar dataKey="present" radius={[4, 4, 0, 0]} fill="oklch(0.72 0.21 45)" name="Present" />
-                  <Bar dataKey="absent"  radius={[4, 4, 0, 0]} fill="oklch(0.3 0 0)"     name="Absent" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} vertical={false} />
+                  <XAxis dataKey="day" stroke={chartAxis} fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke={chartAxis} fontSize={10} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: chartCursor }} />
+                  <Bar dataKey="present" radius={[4, 4, 0, 0]} fill={chartColors.primary} name="Present" />
+                  <Bar dataKey="absent"  radius={[4, 4, 0, 0]} fill={chartColors.muted} name="Absent" />
                 </BarChart>
               </ResponsiveContainer>
               <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">

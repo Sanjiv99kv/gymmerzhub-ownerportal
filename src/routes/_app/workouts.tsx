@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/workouts")({
+export const Route = createFileRoute("/_app/workouts")({
   head: () => ({ meta: [{ title: "Workout Plans — FitSaathi" }] }),
   component: WorkoutsPage,
 });

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export const Route = createFileRoute("/diet")({
+export const Route = createFileRoute("/_app/diet")({
   head: () => ({ meta: [{ title: "Diet Plans — FitSaathi" }] }),
   component: DietPage,
 });
