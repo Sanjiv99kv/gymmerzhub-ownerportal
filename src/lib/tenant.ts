@@ -62,12 +62,24 @@ export interface GymTenant {
 }
 
 export interface AuthSession {
+  token: string;
   gymId: string;
   gymName: string;
   gymSlug: string;
   ownerName: string;
   ownerEmail: string;
+  ownerPhone?: string | null;
+  ownerAvatarUrl?: string | null;
+  emailVerified: boolean;
+  hubRole?: string;
+  hubRoleName?: string | null;
+  /** Assigned gym-role permission keys. Owners get all keys from the API. */
+  permissionKeys?: string[];
+  mfaSetupRequired?: boolean;
+  state: string;
+  stateCode: string;
   city: string;
+  address: string;
   plan: GymPlan;
   trialEndsAt: string;
   billingStatus: BillingStatus;
@@ -218,10 +230,19 @@ export function getSession(): AuthSession | null {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as AuthSession;
+    const parsed = JSON.parse(raw) as AuthSession;
+    if (!parsed?.token || !parsed?.gymId) return null;
+    return {
+      ...parsed,
+      emailVerified: parsed.emailVerified ?? true,
+    };
   } catch {
     return null;
   }
+}
+
+export function getAccessToken() {
+  return getSession()?.token ?? null;
 }
 
 export function setSession(session: AuthSession) {
@@ -232,14 +253,95 @@ export function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
+/** Clear local auth and send the owner to login (used when session is missing/revoked). */
+export function expireSessionToLogin() {
+  clearSession();
+  if (typeof window === "undefined") return;
+  const path = window.location.pathname;
+  if (path === "/login" || path.startsWith("/login") || path === "/register" || path.startsWith("/register") || path.startsWith("/invite")) {
+    return;
+  }
+  window.location.assign("/login");
+}
+
+export function sessionFromAuthData(data: {
+  token: string;
+  user: {
+    fullName: string;
+    email: string;
+    phone?: string | null;
+    emailVerifiedAt?: string | null;
+    emailVerified?: boolean;
+    avatarUrl?: string | null;
+  };
+  gym: {
+    id: string;
+    name: string;
+    slug: string;
+    state: string | null;
+    stateCode: string | null;
+    city: string | null;
+    address: string | null;
+    platformPlan: GymPlan;
+    billingStatus: BillingStatus;
+    trialEndsAt: string | null;
+    createdAt: string | null;
+  };
+  membership?: {
+    role?: string;
+    gymRoleName?: string | null;
+    permissionKeys?: string[];
+    mfaSetupRequired?: boolean;
+  };
+  mfaSetupRequired?: boolean;
+}): AuthSession {
+  const createdAt = (data.gym.createdAt || new Date().toISOString()).slice(0, 10);
+  const trialEndsAt = (data.gym.trialEndsAt || addDaysISO(createdAt, TRIAL_DAYS)).slice(0, 10);
+  const hubRole = data.membership?.role || "owner";
+
+  return {
+    token: data.token,
+    gymId: data.gym.id,
+    gymName: data.gym.name,
+    gymSlug: data.gym.slug,
+    ownerName: data.user.fullName,
+    ownerEmail: data.user.email,
+    ownerPhone: data.user.phone ?? null,
+    ownerAvatarUrl: data.user.avatarUrl ?? null,
+    emailVerified: Boolean(data.user.emailVerified ?? data.user.emailVerifiedAt),
+    hubRole,
+    hubRoleName: data.membership?.gymRoleName ?? (hubRole === "owner" ? "Owner" : null),
+    permissionKeys: Array.isArray(data.membership?.permissionKeys)
+      ? data.membership.permissionKeys
+      : hubRole === "owner"
+        ? undefined
+        : [],
+    mfaSetupRequired: Boolean(data.mfaSetupRequired ?? data.membership?.mfaSetupRequired),
+    state: data.gym.state || "",
+    stateCode: data.gym.stateCode || "",
+    city: data.gym.city || "",
+    address: data.gym.address || "",
+    plan: data.gym.platformPlan,
+    trialEndsAt,
+    billingStatus: data.gym.billingStatus,
+    createdAt,
+  };
+}
+
 export function sessionFromTenant(tenant: GymTenant): AuthSession {
   return {
+    token: "",
     gymId: tenant.id,
     gymName: tenant.name,
     gymSlug: tenant.slug,
     ownerName: tenant.ownerName,
     ownerEmail: tenant.ownerEmail,
+    ownerAvatarUrl: null,
+    emailVerified: true,
+    state: "",
+    stateCode: "",
     city: tenant.city,
+    address: "",
     plan: tenant.plan,
     trialEndsAt: tenant.trialEndsAt,
     billingStatus: tenant.billingStatus,

@@ -13,9 +13,12 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AppWorkoutsRouteImport } from './routes/_app/workouts'
 import { Route as AppTrainersRouteImport } from './routes/_app/trainers'
+import { Route as AppTeamRouteImport } from './routes/_app/team'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppRolesRouteImport } from './routes/_app/roles'
 import { Route as AppRevenueRouteImport } from './routes/_app/revenue'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -47,6 +50,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppWorkoutsRoute = AppWorkoutsRouteImport.update({
   id: '/workouts',
   path: '/workouts',
@@ -57,9 +65,19 @@ const AppTrainersRoute = AppTrainersRouteImport.update({
   path: '/trainers',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTeamRoute = AppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRolesRoute = AppRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRevenueRoute = AppRevenueRouteImport.update({
@@ -131,9 +149,12 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/reports': typeof AppReportsRoute
   '/revenue': typeof AppRevenueRoute
+  '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
+  '/team': typeof AppTeamRoute
   '/trainers': typeof AppTrainersRoute
   '/workouts': typeof AppWorkoutsRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/members/$id': typeof AppMembersIdRoute
   '/members/': typeof AppMembersIndexRoute
 }
@@ -149,9 +170,12 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/reports': typeof AppReportsRoute
   '/revenue': typeof AppRevenueRoute
+  '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
+  '/team': typeof AppTeamRoute
   '/trainers': typeof AppTrainersRoute
   '/workouts': typeof AppWorkoutsRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/': typeof AppIndexRoute
   '/members/$id': typeof AppMembersIdRoute
   '/members': typeof AppMembersIndexRoute
@@ -170,9 +194,12 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/revenue': typeof AppRevenueRoute
+  '/_app/roles': typeof AppRolesRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/team': typeof AppTeamRoute
   '/_app/trainers': typeof AppTrainersRoute
   '/_app/workouts': typeof AppWorkoutsRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/members/$id': typeof AppMembersIdRoute
   '/_app/members/': typeof AppMembersIndexRoute
@@ -192,9 +219,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/revenue'
+    | '/roles'
     | '/settings'
+    | '/team'
     | '/trainers'
     | '/workouts'
+    | '/invite/$token'
     | '/members/$id'
     | '/members/'
   fileRoutesByTo: FileRoutesByTo
@@ -210,9 +240,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/revenue'
+    | '/roles'
     | '/settings'
+    | '/team'
     | '/trainers'
     | '/workouts'
+    | '/invite/$token'
     | '/'
     | '/members/$id'
     | '/members'
@@ -230,9 +263,12 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/reports'
     | '/_app/revenue'
+    | '/_app/roles'
     | '/_app/settings'
+    | '/_app/team'
     | '/_app/trainers'
     | '/_app/workouts'
+    | '/invite/$token'
     | '/_app/'
     | '/_app/members/$id'
     | '/_app/members/'
@@ -242,6 +278,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -274,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/workouts': {
       id: '/_app/workouts'
       path: '/workouts'
@@ -288,11 +332,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTrainersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/team': {
+      id: '/_app/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof AppTeamRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/roles': {
+      id: '/_app/roles'
+      path: '/roles'
+      fullPath: '/roles'
+      preLoaderRoute: typeof AppRolesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/revenue': {
@@ -385,7 +443,9 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppReportsRoute: typeof AppReportsRoute
   AppRevenueRoute: typeof AppRevenueRoute
+  AppRolesRoute: typeof AppRolesRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTeamRoute: typeof AppTeamRoute
   AppTrainersRoute: typeof AppTrainersRoute
   AppWorkoutsRoute: typeof AppWorkoutsRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -403,7 +463,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppReportsRoute: AppReportsRoute,
   AppRevenueRoute: AppRevenueRoute,
+  AppRolesRoute: AppRolesRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTeamRoute: AppTeamRoute,
   AppTrainersRoute: AppTrainersRoute,
   AppWorkoutsRoute: AppWorkoutsRoute,
   AppIndexRoute: AppIndexRoute,
@@ -417,6 +479,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

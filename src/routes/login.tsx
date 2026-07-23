@@ -5,8 +5,20 @@ import { toast } from "sonner";
 import { AuthShell } from "@/components/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
-import { getSession, loginGym, workspaceUrl } from "@/lib/tenant";
+import { formatApiError } from "@/lib/api";
+import { isOwnerMfaChallenge, loginOwner, verifyOwnerMfa } from "@/lib/owner-auth-api";
+import {
+  getSession,
+  sessionFromAuthData,
+  setSession,
+  workspaceUrl,
+} from "@/lib/tenant";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: () => {
@@ -23,26 +35,108 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [slug, setSlug] = useState("andheri");
-  const [email, setEmail] = useState("rajesh@gymmerzhub.in");
-  const [password, setPassword] = useState("gymmerzhub");
+  const [slug, setSlug] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaGymName, setMfaGymName] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+
+  const finishLogin = (data: Parameters<typeof sessionFromAuthData>[0]) => {
+    setSession(sessionFromAuthData(data));
+    toast.success(`Welcome to ${data.gym.name}`);
+    navigate({ to: "/" });
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    window.setTimeout(() => {
-      const result = loginGym({ slug, email, password });
-      setLoading(false);
-      if (!result.ok) {
-        toast.error(result.error);
+    try {
+      const result = await loginOwner({ slug, email, password });
+      if (isOwnerMfaChallenge(result.data)) {
+        setMfaToken(result.data.mfaToken);
+        setMfaGymName(result.data.gymName);
+        setMfaCode("");
+        toast.message("Enter the code from your authenticator app");
         return;
       }
-      toast.success(`Welcome to ${result.session.gymName}`);
-      navigate({ to: "/" });
-    }, 450);
+      finishLogin(result.data);
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not sign in"));
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const onVerifyMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaToken) return;
+    if (mfaCode.length !== 6) {
+      toast.error("Enter the 6-digit authenticator code.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await verifyOwnerMfa({ mfaToken, code: mfaCode });
+      finishLogin(result.data);
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not verify MFA code"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (mfaToken) {
+    return (
+      <AuthShell
+        title="Two-factor authentication"
+        subtitle={`Enter the 6-digit code from your authenticator app to finish signing in to ${mfaGymName || "your workspace"}.`}
+        footer={
+          <button
+            type="button"
+            className="font-semibold text-primary hover:underline"
+            onClick={() => {
+              setMfaToken(null);
+              setMfaCode("");
+              setPassword("");
+            }}
+          >
+            Back to sign in
+          </button>
+        }
+      >
+        <form onSubmit={onVerifyMfa} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="mfaCode">Authenticator code</Label>
+            <InputOTP maxLength={6} value={mfaCode} onChange={setMfaCode} id="mfaCode">
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading || mfaCode.length !== 6}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifying…
+              </>
+            ) : (
+              "Verify and continue"
+            )}
+          </Button>
+        </form>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell
@@ -75,8 +169,7 @@ function LoginPage() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Demo: <span className="font-medium text-foreground">{workspaceUrl("andheri")}</span> or{" "}
-            <span className="font-medium text-foreground">{workspaceUrl("koramangala")}</span>
+            Example: <span className="font-medium text-foreground">{workspaceUrl("powerhouse")}</span>
           </p>
         </div>
 

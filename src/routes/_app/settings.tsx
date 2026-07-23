@@ -74,7 +74,10 @@ function SettingsPage() {
                 <Field label="Confirm new password" type="password" className="md:col-span-2" />
                 <Separator className="md:col-span-2" />
                 <Toggle label="Two-factor authentication" desc="Require OTP for staff sign-in." defaultChecked />
-                <Toggle label="Role permissions" desc="Granular control for trainers and staff." defaultChecked />
+                <div className="md:col-span-2 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  Manage Operator, Trainer, and custom roles under{" "}
+                  <a href="/roles" className="font-medium text-primary hover:underline">Roles &amp; Permissions</a>.
+                </div>
                 <div className="md:col-span-2 flex justify-end"><Button className="bg-gradient-primary text-primary-foreground shadow-glow">Update</Button></div>
               </CardContent>
             </Card>

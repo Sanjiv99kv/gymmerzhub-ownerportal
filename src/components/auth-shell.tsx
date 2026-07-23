@@ -14,10 +14,10 @@ export function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="grid min-h-screen lg:grid-cols-2">
-        {/* Brand panel */}
-        <aside className="relative hidden overflow-hidden bg-slate-950 text-white lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-12">
+    <div className="h-svh overflow-hidden bg-background text-foreground">
+      <div className="grid h-full lg:grid-cols-2">
+        {/* Brand panel — fixed, does not scroll */}
+        <aside className="relative hidden h-full overflow-hidden bg-slate-950 text-white lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-12">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(37,99,235,0.35),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(15,23,42,0.9),transparent_55%)]" />
           <div className="absolute inset-0 opacity-[0.08]" style={{
             backgroundImage: "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
@@ -62,9 +62,9 @@ export function AuthShell({
           </p>
         </aside>
 
-        {/* Form panel */}
-        <main className="flex flex-col justify-center px-5 py-10 sm:px-8 lg:px-12 xl:px-16">
-          <div className="mx-auto w-full max-w-[440px]">
+        {/* Form panel — scrolls independently */}
+        <main className="h-full overflow-y-auto overscroll-contain px-5 py-10 sm:px-8 lg:px-12 xl:px-16">
+          <div className="mx-auto flex min-h-full w-full max-w-[440px] flex-col justify-center">
             <div className="mb-8 flex items-center gap-2.5 lg:hidden">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
                 <Dumbbell className="h-4 w-4" strokeWidth={2.5} />

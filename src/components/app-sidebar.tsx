@@ -2,35 +2,39 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, BadgeCheck, CalendarCheck, Wallet, BarChart3,
   Dumbbell, Megaphone, Salad, Activity, FileText, Settings, LogOut, User,
-  Receipt,
+  Receipt, Shield, UserPlus,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { clearSession, getSession, workspaceUrl } from "@/lib/tenant";
+import { hasPermission, isOwnerSession } from "@/lib/permissions";
+import { getSession, workspaceUrl } from "@/lib/tenant";
+import { logoutOwnerSession } from "@/lib/auth-session";
 
 const main = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Members", url: "/members", icon: Users },
-  { title: "Membership Plans", url: "/plans", icon: BadgeCheck },
-  { title: "Attendance", url: "/attendance", icon: CalendarCheck },
-  { title: "Payments", url: "/payments", icon: Wallet },
-  { title: "Revenue Analytics", url: "/revenue", icon: BarChart3 },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, permission: null as string | null },
+  { title: "Members", url: "/members", icon: Users, permission: "members.read" },
+  { title: "Membership Plans", url: "/plans", icon: BadgeCheck, permission: "plans.read" },
+  { title: "Attendance", url: "/attendance", icon: CalendarCheck, permission: "attendance.read" },
+  { title: "Payments", url: "/payments", icon: Wallet, permission: "payments.read" },
+  { title: "Revenue Analytics", url: "/revenue", icon: BarChart3, permission: "revenue.read" },
 ];
 
 const programs = [
-  { title: "Trainers", url: "/trainers", icon: Dumbbell },
-  { title: "Notices", url: "/notices", icon: Megaphone },
-  { title: "Diet Plans", url: "/diet", icon: Salad },
-  { title: "Workout Plans", url: "/workouts", icon: Activity },
+  { title: "Trainers", url: "/trainers", icon: Dumbbell, permission: "trainers.read" },
+  { title: "Notices", url: "/notices", icon: Megaphone, permission: "notices.read" },
+  { title: "Diet Plans", url: "/diet", icon: Salad, permission: "diet.read" },
+  { title: "Workout Plans", url: "/workouts", icon: Activity, permission: "workouts.read" },
 ];
 
 const system = [
-  { title: "Billing & Invoices", url: "/billing", icon: Receipt },
-  { title: "Reports", url: "/reports", icon: FileText },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Team", url: "/team", icon: UserPlus, permission: "team.read" },
+  { title: "Roles & Permissions", url: "/roles", icon: Shield, permission: "team.write" },
+  { title: "Billing & Invoices", url: "/billing", icon: Receipt, permission: "billing.read" },
+  { title: "Reports", url: "/reports", icon: FileText, permission: "reports.read" },
+  { title: "Settings", url: "/settings", icon: Settings, permission: "settings.read" },
 ];
 
 export function AppSidebar() {
@@ -41,10 +45,22 @@ export function AppSidebar() {
   const session = getSession();
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
-  const logout = () => {
-    clearSession();
+  const logout = async () => {
+    await logoutOwnerSession();
     navigate({ to: "/login" });
   };
+
+  const canSee = (permission: string | null) => {
+    if (!session) return false;
+    if (isOwnerSession(session)) return true;
+    // Dashboard (permission null) is always visible
+    if (permission === null) return true;
+    return hasPermission(session, permission);
+  };
+
+  const mainItems = main.filter((item) => canSee(item.permission));
+  const programItems = programs.filter((item) => canSee(item.permission));
+  const systemItems = system.filter((item) => canSee(item.permission));
 
   const renderItems = (items: typeof main) =>
     items.map((item) => (
@@ -84,30 +100,36 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-1.5">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-            Overview
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderItems(main)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-            Programs
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderItems(programs)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-            System
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderItems(system)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {mainItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              Overview
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{renderItems(mainItems)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {programItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              Programs
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{renderItems(programItems)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {systemItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              System
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{renderItems(systemItems)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
