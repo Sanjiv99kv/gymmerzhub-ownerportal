@@ -30,7 +30,7 @@ export function AuthShell({
                 <Dumbbell className="h-5 w-5" strokeWidth={2.5} />
               </span>
               <span className="font-display text-xl font-bold tracking-tight">
-                Fit<span className="text-blue-300">Saathi</span>
+                Gymmerz<span className="text-blue-300">Hub</span>
               </span>
             </Link>
           </div>
@@ -70,7 +70,7 @@ export function AuthShell({
                 <Dumbbell className="h-4 w-4" strokeWidth={2.5} />
               </span>
               <span className="font-display text-lg font-bold tracking-tight">
-                Fit<span className="text-primary">Saathi</span>
+                Gymmerz<span className="text-primary">Hub</span>
               </span>
             </div>
 
