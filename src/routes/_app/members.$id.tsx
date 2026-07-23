@@ -1,21 +1,38 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   ArrowLeft, Phone, Mail, Calendar, User2, Activity, Pencil, RefreshCcw,
   Wallet, PauseCircle, AlertOctagon, Trash2, Download, FileText, CheckCircle2,
-  MessageCircle, MessageSquare, Send, ShieldAlert, Clock3, Dumbbell,
-  UtensilsCrossed, Target, TrendingUp, Flame, Star,
+  Clock3, Dumbbell, UtensilsCrossed, Target, TrendingUp, Flame, Star, Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { LineChart, Line, ResponsiveContainer, Tooltip, CartesianGrid, XAxis, YAxis } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { members } from "@/lib/data";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { formatApiError } from "@/lib/api";
+import { hasPermission } from "@/lib/permissions";
+import { getSession } from "@/lib/tenant";
+import {
+  createMemberNote,
+  createMemberPayment,
+  deleteMemberNote,
+  fetchMemberDetailBundle,
+  updateMember,
+  type MemberGender,
+} from "@/lib/membership-api";
 import {
   chartTooltipStyle as tooltipStyle,
   chartGrid,
@@ -24,10 +41,12 @@ import {
 } from "@/lib/chart-theme";
 
 export const Route = createFileRoute("/_app/members/$id")({
-  loader: ({ params }) => {
-    const m = members.find((x) => x.id === params.id);
-    if (!m) throw notFound();
-    return { member: m };
+  loader: async ({ params }) => {
+    try {
+      return await fetchMemberDetailBundle(params.id);
+    } catch {
+      throw notFound();
+    }
   },
   component: MemberDetail,
 });
@@ -37,36 +56,11 @@ const weightTrend = [
   { m: "Apr", kg: 79 }, { m: "May", kg: 78 }, { m: "Jun", kg: 77 },
 ];
 
-const membershipHistory = [
-  { date: "2025-01-05", action: "Joined Gym",              plan: "Monthly",   amount: "₹1,500",  type: "join" },
-  { date: "2025-02-05", action: "Monthly Plan Purchased",  plan: "Monthly",   amount: "₹1,500",  type: "purchase" },
-  { date: "2025-03-05", action: "Renewed to 3 Month Plan", plan: "Quarterly", amount: "₹4,000",  type: "renew" },
-  { date: "2025-06-05", action: "Discount Applied",        plan: "Quarterly", amount: "-₹600",   type: "discount" },
-  { date: "2025-09-05", action: "Upgraded to Annual Plan", plan: "Yearly",    amount: "₹13,000", type: "upgrade" },
-  { date: "2025-11-10", action: "Membership Frozen",       plan: "Yearly",    amount: "—",       type: "freeze" },
-  { date: "2025-11-25", action: "Membership Resumed",      plan: "Yearly",    amount: "—",       type: "resume" },
-];
-
-const paymentRows = [
-  { date: "12 Jan 2026", amount: "₹3,000", method: "UPI",           status: "Paid" },
-  { date: "12 Apr 2026", amount: "₹3,000", method: "Cash",          status: "Paid" },
-  { date: "12 Jul 2026", amount: "₹3,000", method: "Card",          status: "Paid" },
-  { date: "12 Oct 2026", amount: "₹3,000", method: "Bank Transfer", status: "Pending" },
-];
-
 const attendanceHistory = [
   { date: "2026-05-28", in: "06:45 AM", out: "08:20 AM", duration: "1h 35m" },
   { date: "2026-05-27", in: "07:10 AM", out: "08:05 AM", duration: "55m" },
   { date: "2026-05-25", in: "06:50 AM", out: "08:02 AM", duration: "1h 12m" },
   { date: "2026-05-24", in: "07:05 AM", out: "08:21 AM", duration: "1h 16m" },
-];
-
-const activities = [
-  { when: "Today",       msg: "Checked In",                icon: "check" },
-  { when: "2 Days Ago",  msg: "Diet Plan Updated",         icon: "update" },
-  { when: "5 Days Ago",  msg: "Payment Received ₹3,000",   icon: "payment" },
-  { when: "20 Days Ago", msg: "Membership Renewed",        icon: "renew" },
-  { when: "45 Days Ago", msg: "Joined Gym",                icon: "join" },
 ];
 
 const historyTypeColors: Record<string, string> = {
@@ -80,20 +74,167 @@ const historyTypeColors: Record<string, string> = {
 };
 
 function MemberDetail() {
-  const { member } = Route.useLoaderData();
+  const router = useRouter();
+  const session = getSession();
+  const canWrite = hasPermission(session, "members.write");
+  const canPay = hasPermission(session, "payments.write") || canWrite;
+
+  const {
+    member,
+    history,
+    payments,
+    paymentSummary,
+    activities,
+    notes,
+  } = Route.useLoaderData();
+
+  const [payOpen, setPayOpen] = useState(false);
+  const [paySaving, setPaySaving] = useState(false);
+  const [payForm, setPayForm] = useState({
+    amount: "",
+    method: "UPI",
+    status: "paid",
+    paidAt: new Date().toISOString().slice(0, 10),
+    notes: "",
+  });
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    age: "",
+    gender: "" as "" | MemberGender,
+    joinDate: "",
+  });
+
   const today = new Date();
-  const joinDate = parseISO(member.joinDate);
-  const expiryDate = parseISO(member.expiryDate);
+  const joinDate = parseISO(member.joinDate || new Date().toISOString().slice(0, 10));
+  const expiryDate = parseISO(member.expiryDate || member.joinDate || new Date().toISOString().slice(0, 10));
   const totalDays = Math.max(1, daysBetween(joinDate, expiryDate));
   const usedDays = clamp(daysBetween(joinDate, today), 0, totalDays);
-  const daysRemaining = Math.max(0, daysBetween(today, expiryDate));
-  const progressPct = Math.round((usedDays / totalDays) * 100);
-  const outstanding = daysRemaining > 0 ? 0 : member.plan === "Yearly" ? 13000 : 1500;
+  const daysRemaining = member.expiryDate ? Math.max(0, daysBetween(today, expiryDate)) : 0;
+  const progressPct = member.expiryDate ? Math.round((usedDays / totalDays) * 100) : 0;
+  const outstanding = paymentSummary?.outstanding ?? 0;
+  const totalPaid = paymentSummary?.totalPaid ?? 0;
   const statusTone = getStatusTone(member.status);
-  const attendanceThisMonth = Math.max(0, Math.round(member.attendance * 0.2));
-  const totalPaid = paymentRows
-    .filter((p) => p.status === "Paid")
-    .reduce((sum, p) => sum + Number(p.amount.replace(/[^\d]/g, "")), 0);
+  const attendanceThisMonth = Math.max(0, Math.round((member.attendance || 0) * 0.2));
+
+  async function refresh() {
+    await router.invalidate();
+  }
+
+  async function onRecordPayment() {
+    const amount = Number(payForm.amount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    setPaySaving(true);
+    try {
+      await createMemberPayment(member.id, {
+        amount,
+        method: payForm.method,
+        status: payForm.status,
+        paidAt: payForm.paidAt,
+        notes: payForm.notes.trim() || null,
+      });
+      toast.success("Payment recorded");
+      setPayOpen(false);
+      setPayForm({
+        amount: "",
+        method: "UPI",
+        status: "paid",
+        paidAt: new Date().toISOString().slice(0, 10),
+        notes: "",
+      });
+      await refresh();
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not record payment"));
+    } finally {
+      setPaySaving(false);
+    }
+  }
+
+  async function onSaveNote() {
+    if (!noteDraft.trim()) {
+      toast.error("Write a note first");
+      return;
+    }
+    setNoteSaving(true);
+    try {
+      await createMemberNote(member.id, noteDraft.trim());
+      toast.success("Note saved");
+      setNoteDraft("");
+      await refresh();
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not save note"));
+    } finally {
+      setNoteSaving(false);
+    }
+  }
+
+  async function onDeleteNote(noteId: string) {
+    if (!window.confirm("Delete this note?")) return;
+    try {
+      await deleteMemberNote(member.id, noteId);
+      toast.success("Note deleted");
+      await refresh();
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not delete note"));
+    }
+  }
+
+  function openEdit() {
+    setEditForm({
+      fullName: member.fullName || member.name || "",
+      phone: String(member.phone || "").replace(/\D/g, "").slice(0, 10),
+      email: member.email || "",
+      age: member.age != null ? String(member.age) : "",
+      gender: (member.gender as MemberGender) || "",
+      joinDate: member.joinDate || new Date().toISOString().slice(0, 10),
+    });
+    setEditOpen(true);
+  }
+
+  async function onSaveEdit() {
+    if (editForm.fullName.trim().length < 2) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!/^\d{10}$/.test(editForm.phone.trim())) {
+      toast.error("Phone must be exactly 10 digits");
+      return;
+    }
+    if (editForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email.trim())) {
+      toast.error("Enter a valid email");
+      return;
+    }
+    if (!editForm.joinDate) {
+      toast.error("Joined at is required");
+      return;
+    }
+    setEditSaving(true);
+    try {
+      await updateMember(member.id, {
+        fullName: editForm.fullName.trim(),
+        phone: editForm.phone.trim(),
+        email: editForm.email.trim() || null,
+        age: editForm.age ? Number(editForm.age) : null,
+        gender: editForm.gender || null,
+        joinDate: editForm.joinDate,
+      });
+      toast.success("Member updated");
+      setEditOpen(false);
+      await refresh();
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not update member"));
+    } finally {
+      setEditSaving(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,9 +247,13 @@ function MemberDetail() {
         </Button>
         <div className="h-4 w-px bg-border" />
         <span className="text-sm text-muted-foreground">{member.name}</span>
-        <span className="text-xs text-muted-foreground">· {member.id}</span>
+        <span className="text-xs text-muted-foreground">· {member.memberCode}</span>
         <div className="ml-auto flex gap-2">
-          <Button size="sm" variant="outline"><Pencil className="mr-1 h-3.5 w-3.5" /> Edit</Button>
+          {canWrite ? (
+            <Button size="sm" variant="outline" onClick={openEdit}>
+              <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
+            </Button>
+          ) : null}
           <Button size="sm" className="bg-gradient-primary text-primary-foreground shadow-glow">
             <RefreshCcw className="mr-1 h-3.5 w-3.5" /> Renew
           </Button>
@@ -134,31 +279,41 @@ function MemberDetail() {
               <div className="flex-1 space-y-3 pt-2">
                 <div>
                   <h1 className="font-display text-3xl font-bold leading-tight">{member.name}</h1>
-                  <p className="text-sm text-muted-foreground">Membership ID: {member.id}</p>
+                  <p className="text-sm text-muted-foreground">Membership ID: {member.memberCode}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className={statusTone}>{member.status}</Badge>
-                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary">{member.plan}</Badge>
+                  {member.plan ? (
+                    <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary">{member.plan}</Badge>
+                  ) : (
+                    <Badge variant="outline">No plan</Badge>
+                  )}
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Phone className="h-3.5 w-3.5" /> {member.phone}
                   </span>
-                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Mail className="h-3.5 w-3.5" /> {member.email}
-                  </span>
+                  {member.email ? (
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Mail className="h-3.5 w-3.5" /> {member.email}
+                    </span>
+                  ) : null}
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Calendar className="h-3.5 w-3.5" /> Joined {member.joinDate}
                   </span>
-                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <User2 className="h-3.5 w-3.5" /> {member.age} · {member.gender}
-                  </span>
+                  {(member.age || member.gender) ? (
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <User2 className="h-3.5 w-3.5" /> {[member.age, member.gender].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2 lg:shrink-0">
-                <Button variant="outline" size="sm">
-                  <Wallet className="mr-1 h-3.5 w-3.5" /> Record Payment
-                </Button>
+                {canPay ? (
+                  <Button variant="outline" size="sm" onClick={() => setPayOpen(true)}>
+                    <Wallet className="mr-1 h-3.5 w-3.5" /> Record Payment
+                  </Button>
+                ) : null}
                 <Button variant="outline" size="sm">
                   <PauseCircle className="mr-1 h-3.5 w-3.5" /> Freeze
                 </Button>
@@ -201,10 +356,22 @@ function MemberDetail() {
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {[
-                    { label: "Plan", value: member.plan, icon: Star },
-                    { label: "Amount Paid", value: `₹${(member.plan === "Yearly" ? 13000 : 1500).toLocaleString("en-IN")}`, icon: Wallet },
+                    { label: "Plan", value: member.plan || "None", icon: Star },
+                    {
+                      label: "Amount Paid",
+                      value: member.currentMembership?.priceCharged != null
+                        ? `₹${Number(member.currentMembership.priceCharged).toLocaleString("en-IN")}`
+                        : "—",
+                      icon: Wallet,
+                    },
                     { label: "Days Remaining", value: `${daysRemaining}`, icon: Clock3 },
-                    { label: "Discount", value: "₹500 (Loyalty)", icon: CheckCircle2 },
+                    {
+                      label: "Discount",
+                      value: member.currentMembership?.discount?.amount
+                        ? `₹${Number(member.currentMembership.discount.amount).toLocaleString("en-IN")} (${member.currentMembership.discount.name})`
+                        : "None",
+                      icon: CheckCircle2,
+                    },
                   ].map(({ label, value, icon: Icon }) => (
                     <div key={label} className="rounded-xl border border-border bg-background/50 p-3">
                       <div className="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -238,7 +405,7 @@ function MemberDetail() {
             {/* Tabs */}
             <Tabs defaultValue="history">
               <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl bg-card border border-border p-1.5">
-                {["history", "payments", "attendance", "fitness", "plans", "communication", "admin"].map((v) => (
+                {["history", "payments", "attendance", "fitness", "plans", "admin"].map((v) => (
                   <TabsTrigger
                     key={v}
                     value={v}
@@ -257,23 +424,37 @@ function MemberDetail() {
                     <CardDescription>Timeline of all plan changes and activities</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="relative space-y-0">
-                      {membershipHistory.map((item, i) => (
-                        <div key={`${item.date}-${i}`} className="flex gap-4">
-                          <div className="flex flex-col items-center">
-                            <div className={`mt-1 h-3 w-3 shrink-0 rounded-full ${historyTypeColors[item.type]}`} />
-                            {i < membershipHistory.length - 1 && <div className="my-1 w-px flex-1 bg-border" />}
-                          </div>
-                          <div className="flex flex-1 items-start justify-between gap-3 pb-5">
-                            <div>
-                              <p className="text-sm font-medium">{item.action}</p>
-                              <p className="text-xs text-muted-foreground">{item.date} · {item.plan}</p>
+                    {history.length === 0 ? (
+                      <p className="py-8 text-center text-sm text-muted-foreground">No membership history yet.</p>
+                    ) : (
+                      <div className="relative space-y-0">
+                        {history.map((item, i) => (
+                          <div key={item.id} className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                              <div className={`mt-1 h-3 w-3 shrink-0 rounded-full ${historyTypeColors[item.type] || historyTypeColors.purchase}`} />
+                              {i < history.length - 1 && <div className="my-1 w-px flex-1 bg-border" />}
                             </div>
-                            <span className="shrink-0 text-sm font-semibold">{item.amount}</span>
+                            <div className="flex flex-1 items-start justify-between gap-3 pb-5">
+                              <div>
+                                <p className="text-sm font-medium">{item.action}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.date} · {item.plan}
+                                  {item.status !== "active" ? ` · ${item.status}` : ""}
+                                </p>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <p className="text-sm font-semibold">{item.amountLabel}</p>
+                                {item.discount ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    Discount: {item.discount.label}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -282,8 +463,8 @@ function MemberDetail() {
               <TabsContent value="payments" className="mt-4 space-y-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <StatCard title="Total Revenue" value={`₹${totalPaid.toLocaleString("en-IN")}`} icon={TrendingUp} />
-                  <StatCard title="Transactions" value={paymentRows.length.toString()} icon={FileText} />
-                  <StatCard title="Last Payment" value="12 Jul 2026" icon={Calendar} />
+                  <StatCard title="Transactions" value={String(paymentSummary?.transactionCount ?? payments.length)} icon={FileText} />
+                  <StatCard title="Last Payment" value={paymentSummary?.lastPaymentDate || "—"} icon={Calendar} />
                   <StatCard title="Outstanding" value={`₹${outstanding.toLocaleString("en-IN")}`} icon={Wallet} />
                 </div>
                 <Card className="border-border bg-card shadow-card">
@@ -293,8 +474,12 @@ function MemberDetail() {
                       <CardDescription>Payment trail and collection status</CardDescription>
                     </div>
                     <div className="flex gap-2">
+                      {canPay ? (
+                        <Button size="sm" onClick={() => setPayOpen(true)}>
+                          <Wallet className="mr-1 h-4 w-4" /> Record
+                        </Button>
+                      ) : null}
                       <Button variant="outline" size="sm"><Download className="mr-1 h-4 w-4" /> Receipt</Button>
-                      <Button variant="outline" size="sm"><FileText className="mr-1 h-4 w-4" /> Invoice</Button>
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -302,23 +487,36 @@ function MemberDetail() {
                       <table className="w-full border-collapse text-sm">
                         <thead>
                           <tr className="border-b border-border bg-background/60">
-                            {["Date", "Amount", "Method", "Status"].map((h) => (
+                            {["Date", "Amount", "Discount", "Method", "Status"].map((h) => (
                               <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{h}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                          {paymentRows.map((p) => {
-                            const isPaid = p.status === "Paid";
+                          {payments.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                                No payments recorded yet.
+                              </td>
+                            </tr>
+                          ) : payments.map((p) => {
+                            const isPaid = p.status === "paid";
                             return (
-                              <tr key={`${p.date}-${p.method}`} className="transition-colors hover:bg-accent/20">
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{p.date}</td>
-                                <td className="px-4 py-3 font-display font-bold tabular-nums">{p.amount}</td>
+                              <tr key={p.id} className="transition-colors hover:bg-accent/20">
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{p.paidAt || "—"}</td>
+                                <td className="px-4 py-3 font-display font-bold tabular-nums">
+                                  ₹{p.amount.toLocaleString("en-IN")}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">
+                                  {p.discount
+                                    ? `₹${p.discount.amount.toLocaleString("en-IN")} (${p.discount.name})`
+                                    : "—"}
+                                </td>
                                 <td className="px-4 py-3">
                                   <span className="rounded border border-border bg-background/60 px-2 py-0.5 text-xs font-medium">{p.method}</span>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${isPaid ? "border-success/30 bg-success/10 text-success" : "border-warning/30 bg-warning/10 text-warning"}`}>
+                                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${isPaid ? "border-success/30 bg-success/10 text-success" : "border-warning/30 bg-warning/10 text-warning"}`}>
                                     <span className={`h-1.5 w-1.5 rounded-full ${isPaid ? "bg-success" : "bg-warning"}`} />
                                     {p.status}
                                   </span>
@@ -617,53 +815,6 @@ function MemberDetail() {
                 </Card>
               </TabsContent>
 
-              {/* Communication */}
-              <TabsContent value="communication" className="mt-4 space-y-4">
-                <Card className="border-border bg-card shadow-card">
-                  <CardHeader>
-                    <CardTitle className="font-display">Communication History</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {[
-                      { msg: "Renewal Reminder Sent", date: "2026-05-25" },
-                      { msg: "Membership Expiry Notification Sent", date: "2026-05-10" },
-                      { msg: "Diet Plan Updated", date: "2026-04-30" },
-                      { msg: "New Workout Plan Assigned", date: "2026-04-20" },
-                    ].map((item) => (
-                      <div key={item.msg} className="flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
-                        <span className="text-sm">{item.msg}</span>
-                        <span className="text-xs text-muted-foreground">{item.date}</span>
-                      </div>
-                    ))}
-                  </CardContent>
-                  <CardFooter className="flex flex-wrap gap-2 border-t border-border pt-4">
-                    <Button variant="outline" size="sm"><MessageCircle className="mr-1 h-4 w-4" /> WhatsApp</Button>
-                    <Button variant="outline" size="sm"><MessageSquare className="mr-1 h-4 w-4" /> SMS</Button>
-                    <Button variant="outline" size="sm"><Send className="mr-1 h-4 w-4" /> Email</Button>
-                  </CardFooter>
-                </Card>
-
-                <Card className="border-border bg-card shadow-card">
-                  <CardHeader>
-                    <CardTitle className="font-display">Emergency Contact</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { l: "Name",         v: "Anita Sharma", icon: User2 },
-                        { l: "Relationship", v: "Spouse",       icon: ShieldAlert },
-                        { l: "Phone",        v: "+91 98xxxxxx12", icon: Phone },
-                      ].map(({ l, v, icon: Icon }) => (
-                        <div key={l} className="rounded-xl border border-border bg-background/50 p-3">
-                          <p className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground"><Icon className="h-3.5 w-3.5" />{l}</p>
-                          <p className="font-medium text-sm">{v}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
               {/* Admin Notes */}
               <TabsContent value="admin" className="mt-4 space-y-4">
                 <Card className="border-border bg-card shadow-card">
@@ -671,12 +822,55 @@ function MemberDetail() {
                     <CardTitle className="font-display">Staff Notes</CardTitle>
                     <CardDescription>Private — visible only to gym staff</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Textarea
-                      className="min-h-36 border-border bg-background/60 resize-none"
-                      defaultValue={"Prefers evening batches.\nHas knee injury — avoid heavy squats.\nInterested in personal training."}
-                    />
-                    <Button className="bg-gradient-primary text-primary-foreground shadow-glow">Save Notes</Button>
+                  <CardContent className="space-y-4">
+                    {canWrite ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          className="min-h-28 border-border bg-background/60 resize-none"
+                          placeholder="Add a staff note…"
+                          value={noteDraft}
+                          onChange={(e) => setNoteDraft(e.target.value)}
+                        />
+                        <Button
+                          className="bg-gradient-primary text-primary-foreground shadow-glow"
+                          onClick={() => void onSaveNote()}
+                          disabled={noteSaving}
+                        >
+                          {noteSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Add Note
+                        </Button>
+                      </div>
+                    ) : null}
+
+                    {notes.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-muted-foreground">No staff notes yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {notes.map((n) => (
+                          <div key={n.id} className="rounded-xl border border-border bg-background/50 p-3">
+                            <div className="mb-2 flex items-start justify-between gap-2">
+                              <p className="text-xs text-muted-foreground">
+                                {n.createdBy || "Staff"}
+                                {n.createdAt
+                                  ? ` · ${new Date(n.createdAt).toLocaleString("en-IN")}`
+                                  : ""}
+                              </p>
+                              {canWrite ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-destructive hover:text-destructive"
+                                  onClick={() => void onDeleteNote(n.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              ) : null}
+                            </div>
+                            <p className="whitespace-pre-wrap text-sm">{n.body}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -703,8 +897,8 @@ function MemberDetail() {
                     <p className="rounded-lg border border-border bg-background/40 px-3 py-2 text-xs text-muted-foreground">
                       Example: 15 June to 30 June — 15 days will be added to your expiry date automatically.
                     </p>
-                    <Button variant="outline">
-                      <PauseCircle className="mr-2 h-4 w-4" /> Apply Freeze
+                    <Button variant="outline" disabled>
+                      <PauseCircle className="mr-2 h-4 w-4" /> Apply Freeze (coming soon)
                     </Button>
                   </CardContent>
                 </Card>
@@ -728,7 +922,7 @@ function MemberDetail() {
                     { label: "Last Visit",     value: "Today",                                   icon: Calendar, tone: "" },
                     { label: "Total Visits",   value: member.attendance.toString(),              icon: Activity, tone: "" },
                     { label: "Trainer",        value: "Vikrant",                                 icon: User2,    tone: "" },
-                    { label: "Total Paid",     value: `₹${(totalPaid / 1000).toFixed(0)}K`,      icon: Wallet,   tone: "text-success" },
+                    { label: "Total Paid",     value: `₹${totalPaid.toLocaleString("en-IN")}`,      icon: Wallet,   tone: "text-success" },
                     { label: "Outstanding",    value: `₹${outstanding.toLocaleString("en-IN")}`, icon: Wallet,   tone: outstanding > 0 ? "text-destructive" : "" },
                   ].map(({ label, value, icon: Icon, tone }) => (
                     <div key={label} className="rounded-xl border border-border bg-background/50 p-3">
@@ -748,25 +942,178 @@ function MemberDetail() {
                 <CardTitle className="font-display text-base">Activity Timeline</CardTitle>
               </CardHeader>
               <CardContent>
-                <ol className="space-y-4">
-                  {activities.map((a, i) => (
-                    <li key={a.msg} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary mt-1" />
-                        {i < activities.length - 1 && <div className="mt-1 flex-1 w-px bg-border" />}
-                      </div>
-                      <div className="pb-4 min-w-0">
-                        <p className="text-xs text-muted-foreground">{a.when}</p>
-                        <p className="text-sm font-medium">{a.msg}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                {activities.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-muted-foreground">No activity yet.</p>
+                ) : (
+                  <ol className="space-y-4">
+                    {activities.map((a, i) => (
+                      <li key={a.id} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary mt-1" />
+                          {i < activities.length - 1 && <div className="mt-1 flex-1 w-px bg-border" />}
+                        </div>
+                        <div className="pb-4 min-w-0">
+                          <p className="text-xs text-muted-foreground">{a.when}</p>
+                          <p className="text-sm font-medium">{a.message}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </CardContent>
             </Card>
           </aside>
         </div>
       </div>
+
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>Log a payment for {member.name}.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div>
+              <p className="mb-1.5 text-xs text-muted-foreground">Amount (₹)</p>
+              <Input
+                type="number"
+                min={0}
+                value={payForm.amount}
+                onChange={(e) => setPayForm((f) => ({ ...f, amount: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="mb-1.5 text-xs text-muted-foreground">Method</p>
+                <Select value={payForm.method} onValueChange={(v) => setPayForm((f) => ({ ...f, method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["Cash", "UPI", "Card", "Bank Transfer", "Online Gateway"].map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs text-muted-foreground">Status</p>
+                <Select value={payForm.status} onValueChange={(v) => setPayForm((f) => ({ ...f, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["paid", "pending", "failed", "refunded"].map((s) => (
+                      <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs text-muted-foreground">Paid on</p>
+              <Input
+                type="date"
+                value={payForm.paidAt}
+                onChange={(e) => setPayForm((f) => ({ ...f, paidAt: e.target.value }))}
+              />
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs text-muted-foreground">Notes</p>
+              <Textarea
+                value={payForm.notes}
+                onChange={(e) => setPayForm((f) => ({ ...f, notes: e.target.value }))}
+                className="min-h-20 resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayOpen(false)}>Cancel</Button>
+            <Button onClick={() => void onRecordPayment()} disabled={paySaving}>
+              {paySaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit member</DialogTitle>
+            <DialogDescription>Update profile details for {member.name}.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-2">
+              <Label>Full name</Label>
+              <Input
+                value={editForm.fullName}
+                onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Phone</Label>
+              <Input
+                inputMode="numeric"
+                maxLength={10}
+                value={editForm.phone}
+                onChange={(e) =>
+                  setEditForm((f) => ({
+                    ...f,
+                    phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                  }))
+                }
+                placeholder="10-digit mobile"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Email (optional)</Label>
+              <Input
+                value={editForm.email}
+                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label>Age</Label>
+                <Input
+                  type="number"
+                  value={editForm.age}
+                  onChange={(e) => setEditForm((f) => ({ ...f, age: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Gender</Label>
+                <Select
+                  value={editForm.gender || "none"}
+                  onValueChange={(v) =>
+                    setEditForm((f) => ({ ...f, gender: v === "none" ? "" : (v as MemberGender) }))
+                  }
+                >
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Not set</SelectItem>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Joined at</Label>
+              <Input
+                type="date"
+                value={editForm.joinDate}
+                onChange={(e) => setEditForm((f) => ({ ...f, joinDate: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={editSaving}>Cancel</Button>
+            <Button onClick={() => void onSaveEdit()} disabled={editSaving}>
+              {editSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -819,8 +1166,9 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
 }
 
-function getStatusTone(status: "active" | "expired" | "suspended") {
+function getStatusTone(status: string) {
   if (status === "active")   return "border-success/40 bg-success/10 text-success";
   if (status === "expired")  return "border-destructive/40 bg-destructive/10 text-destructive";
+  if (status === "frozen")   return "border-border bg-muted text-muted-foreground";
   return "border-warning/40 bg-warning/10 text-warning";
 }

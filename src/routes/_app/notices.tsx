@@ -278,6 +278,7 @@ function NoticesPage() {
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span>
                   {n.status === "published" ? "Posted" : "Updated"} {formatPosted(n)}
+                  {n.postedBy ? ` · by ${n.postedBy}` : ""}
                 </span>
                 {canWrite && (
                   <div className="flex items-center gap-1">

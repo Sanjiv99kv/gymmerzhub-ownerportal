@@ -15,6 +15,7 @@ export type GymNotice = {
   editable: boolean;
   publishedAt: string | null;
   createdByUserId: string;
+  postedBy: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 };

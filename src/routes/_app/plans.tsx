@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Check, Sparkles, Plus, Tag, TrendingUp,
   Wallet, BadgeCheck, AlertTriangle, RefreshCw, Bell, Pencil, Trash2,
-  IndianRupee, Receipt, History,
+  IndianRupee, Receipt, History, Loader2, Search, X,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -36,11 +36,29 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
+import { formatApiError } from "@/lib/api";
 import {
-  membershipPlans, discounts, expiringMemberships, members,
   revenueByPlan, discountUsage, renewalConversion, membershipHistorySample,
-  type MembershipPlan, type Discount, type DurationUnit,
 } from "@/lib/data";
+import {
+  assignMembership,
+  createDiscount,
+  createPlan,
+  deleteDiscount,
+  deletePlan,
+  fetchDiscounts,
+  fetchExpiringMemberships,
+  fetchMemberStats,
+  fetchPlans,
+  searchMembers,
+  updateDiscount,
+  updatePlan,
+  type DurationUnit,
+  type ExpiringMembership,
+  type MemberSearchHit,
+  type MembershipDiscount,
+  type MembershipPlan,
+} from "@/lib/membership-api";
 import {
   chartTooltipStyle as tooltipStyle,
   chartGrid,
@@ -74,16 +92,102 @@ function computePricing(basePrice: number, regFee: number, gst: number, discount
 }
 
 function PlansPage() {
-  const [planList, setPlanList] = useState<MembershipPlan[]>(membershipPlans);
-  const [discList, setDiscList] = useState<Discount[]>(discounts);
+  const [planList, setPlanList] = useState<MembershipPlan[]>([]);
+  const [expiring, setExpiring] = useState<ExpiringMembership[]>([]);
+  const [stats, setStats] = useState({ activeMemberships: 0, expiringThisWeek: 0 });
+  const [discList, setDiscList] = useState<MembershipDiscount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [plans, exp, s, discs] = await Promise.all([
+        fetchPlans(),
+        fetchExpiringMemberships(7),
+        fetchMemberStats(),
+        fetchDiscounts(),
+      ]);
+      setPlanList(plans);
+      setExpiring(exp);
+      setStats({
+        activeMemberships: s.activeMemberships,
+        expiringThisWeek: s.expiringThisWeek,
+      });
+      setDiscList(discs);
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not load membership data"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
 
   const totals = useMemo(() => {
     const active = planList.filter((p) => p.status === "active").length;
     const totalRevenue = planList.reduce((a, p) => a + p.basePrice * p.sold, 0);
-    const expiringWeek = expiringMemberships.filter((e) => e.daysRemaining <= 7).length;
-    const expiringToday = expiringMemberships.filter((e) => e.daysRemaining === 0).length;
+    const expiringWeek = expiring.filter((e) => e.daysRemaining <= 7).length;
+    const expiringToday = expiring.filter((e) => e.daysRemaining === 0).length;
     return { active, totalRevenue, expiringWeek, expiringToday };
-  }, [planList]);
+  }, [planList, expiring]);
+
+  async function handleCreatePlan(input: Parameters<typeof createPlan>[0]) {
+    const plan = await createPlan(input);
+    setPlanList((s) => [...s, plan]);
+    return plan;
+  }
+
+  async function handleTogglePlan(id: string) {
+    const current = planList.find((p) => p.id === id);
+    if (!current) return;
+    try {
+      const next = await updatePlan(id, {
+        status: current.status === "active" ? "inactive" : "active",
+      });
+      setPlanList((s) => s.map((x) => (x.id === id ? next : x)));
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not update plan"));
+    }
+  }
+
+  async function handleDeletePlan(id: string) {
+    try {
+      await deletePlan(id);
+      setPlanList((s) => s.filter((x) => x.id !== id));
+      toast.success("Plan removed");
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not delete plan"));
+    }
+  }
+
+  async function handleCreateDiscount(input: Parameters<typeof createDiscount>[0]) {
+    const discount = await createDiscount(input);
+    setDiscList((s) => [discount, ...s]);
+    return discount;
+  }
+
+  async function handleToggleDiscount(id: string) {
+    const current = discList.find((d) => d.id === id);
+    if (!current) return;
+    try {
+      const next = await updateDiscount(id, { active: !current.active });
+      setDiscList((s) => s.map((x) => (x.id === id ? next : x)));
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not update discount"));
+    }
+  }
+
+  async function handleDeleteDiscount(id: string) {
+    try {
+      await deleteDiscount(id);
+      setDiscList((s) => s.filter((x) => x.id !== id));
+      toast.success("Discount removed");
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not delete discount"));
+    }
+  }
 
   return (
     <div>
@@ -91,16 +195,22 @@ function PlansPage() {
         badge="Membership Suite"
         title="Membership Management"
         description="Create flexible plans, run discounts, track renewals, and monitor subscription revenue."
-        action={<CreatePlanDialog onCreate={(p) => setPlanList((s) => [...s, p])} />}
+        action={<CreatePlanDialog onCreate={handleCreatePlan} />}
       />
 
       <div className="space-y-6 p-6">
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : null}
+
         {/* KPI ROW */}
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Total Plans" value={planList.length.toString()} delta={6} icon={BadgeCheck} accent="primary" />
-          <KpiCard label="Active Memberships" value="978" delta={8} icon={Sparkles} accent="lime" />
-          <KpiCard label="Expiring this week" value={totals.expiringWeek.toString()} delta={-3} icon={AlertTriangle} accent="warning" />
-          <KpiCard label="Membership Revenue" value={`₹${(totals.totalRevenue / 100000).toFixed(1)}L`} delta={14} icon={Wallet} accent="success" />
+          <KpiCard label="Total Plans" value={planList.length.toString()} delta={0} icon={BadgeCheck} accent="primary" />
+          <KpiCard label="Active Memberships" value={String(stats.activeMemberships)} delta={0} icon={Sparkles} accent="lime" />
+          <KpiCard label="Expiring this week" value={String(totals.expiringWeek || stats.expiringThisWeek)} delta={0} icon={AlertTriangle} accent="warning" />
+          <KpiCard label="Membership Revenue" value={`₹${(totals.totalRevenue / 100000).toFixed(1)}L`} delta={0} icon={Wallet} accent="success" />
         </section>
 
         <Tabs defaultValue="plans" className="space-y-5">
@@ -116,13 +226,15 @@ function PlansPage() {
           {/* PLANS TAB */}
           <TabsContent value="plans" className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {planList.sort((a, b) => a.displayOrder - b.displayOrder).map((p) => (
-                <PlanCard key={p.id} plan={p}
-                  onToggle={(id) => setPlanList((s) => s.map((x) => x.id === id ? { ...x, status: x.status === "active" ? "inactive" : "active" } : x))}
-                  onDelete={(id) => { setPlanList((s) => s.filter((x) => x.id !== id)); toast.success("Plan removed"); }}
+              {[...planList].sort((a, b) => a.displayOrder - b.displayOrder).map((p) => (
+                <PlanCard
+                  key={p.id}
+                  plan={p}
+                  onToggle={handleTogglePlan}
+                  onDelete={handleDeletePlan}
                 />
               ))}
-              <CreatePlanCard onCreate={(p) => setPlanList((s) => [...s, p])} />
+              <CreatePlanCard onCreate={handleCreatePlan} />
             </div>
           </TabsContent>
 
@@ -131,20 +243,24 @@ function PlansPage() {
             <DiscountsSection
               discounts={discList}
               plans={planList}
-              onCreate={(d) => setDiscList((s) => [d, ...s])}
-              onToggle={(id) => setDiscList((s) => s.map((x) => x.id === id ? { ...x, active: !x.active } : x))}
-              onDelete={(id) => { setDiscList((s) => s.filter((x) => x.id !== id)); toast.success("Discount removed"); }}
+              onCreate={handleCreateDiscount}
+              onToggle={handleToggleDiscount}
+              onDelete={handleDeleteDiscount}
             />
           </TabsContent>
 
           {/* ASSIGN TAB */}
           <TabsContent value="assign">
-            <AssignMembershipSection plans={planList} discounts={discList} />
+            <AssignMembershipSection
+              plans={planList}
+              discounts={discList}
+              onAssigned={() => void load()}
+            />
           </TabsContent>
 
           {/* RENEWALS TAB */}
           <TabsContent value="renewals" className="space-y-5">
-            <RenewalsSection plans={planList} discounts={discList} />
+            <RenewalsSection plans={planList} discounts={discList} expiring={expiring} />
           </TabsContent>
 
           {/* HISTORY TAB */}
@@ -241,11 +357,11 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
   );
 }
 
-function CreatePlanCard({ onCreate }: { onCreate: (p: MembershipPlan) => void }) {
+function CreatePlanCard({ onCreate }: { onCreate: (p: Parameters<typeof createPlan>[0]) => Promise<MembershipPlan> }) {
   return (
     <CreatePlanDialog onCreate={onCreate}>
       <button className="group flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/40 p-6 transition-all hover:border-primary/60 hover:bg-card">
-        <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-primary opacity-80 shadow-glow transition-transform group-hover:scale-110">
+        <div className="grid h-14 w-14 place-items-center rounded-full bg-primary opacity-80 transition-transform group-hover:scale-110">
           <Plus className="h-6 w-6 text-primary-foreground" />
         </div>
         <div className="text-center">
@@ -258,8 +374,15 @@ function CreatePlanCard({ onCreate }: { onCreate: (p: MembershipPlan) => void })
 }
 
 /* ============= CREATE PLAN DIALOG ============= */
-function CreatePlanDialog({ onCreate, children }: { onCreate: (p: MembershipPlan) => void; children?: React.ReactNode }) {
+function CreatePlanDialog({
+  onCreate,
+  children,
+}: {
+  onCreate: (p: Parameters<typeof createPlan>[0]) => Promise<MembershipPlan>;
+  children?: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [durationValue, setDurationValue] = useState(1);
   const [durationUnit, setDurationUnit] = useState<DurationUnit>("months");
@@ -273,21 +396,30 @@ function CreatePlanDialog({ onCreate, children }: { onCreate: (p: MembershipPlan
 
   const pricing = computePricing(basePrice, regFee, gst, null);
 
-  function submit() {
+  async function submit() {
     if (!name.trim()) { toast.error("Plan name is required"); return; }
-    const newPlan: MembershipPlan = {
-      id: `pl-${Date.now()}`,
-      name, durationValue, durationUnit, basePrice,
-      registrationFee: regFee, gstPercent: gst,
-      tagline: tagline || "Custom plan",
-      benefits: benefits.split("\n").map((b) => b.trim()).filter(Boolean),
-      status: status ? "active" : "inactive",
-      displayOrder: order, sold: 0,
-    };
-    onCreate(newPlan);
-    toast.success(`Plan "${name}" created`);
-    setOpen(false);
-    setName(""); setTagline("");
+    setSaving(true);
+    try {
+      await onCreate({
+        name: name.trim(),
+        durationValue,
+        durationUnit,
+        basePrice,
+        registrationFee: regFee,
+        gstPercent: gst,
+        tagline: tagline || "Custom plan",
+        benefits: benefits.split("\n").map((b) => b.trim()).filter(Boolean),
+        status: status ? "active" : "inactive",
+        displayOrder: order,
+      });
+      toast.success(`Plan "${name}" created`);
+      setOpen(false);
+      setName(""); setTagline("");
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not create plan"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -393,7 +525,8 @@ function CreatePlanDialog({ onCreate, children }: { onCreate: (p: MembershipPlan
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit} className="bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button onClick={() => void submit()} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
             Create plan
           </Button>
         </DialogFooter>
@@ -404,8 +537,8 @@ function CreatePlanDialog({ onCreate, children }: { onCreate: (p: MembershipPlan
 
 /* ============= DISCOUNTS SECTION ============= */
 function DiscountsSection({ discounts, plans, onCreate, onToggle, onDelete }: {
-  discounts: Discount[]; plans: MembershipPlan[];
-  onCreate: (d: Discount) => void;
+  discounts: MembershipDiscount[]; plans: MembershipPlan[];
+  onCreate: (d: Parameters<typeof createDiscount>[0]) => Promise<MembershipDiscount>;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -478,27 +611,51 @@ function DiscountsSection({ discounts, plans, onCreate, onToggle, onDelete }: {
   );
 }
 
-function CreateDiscountDialog({ plans, onCreate }: { plans: MembershipPlan[]; onCreate: (d: Discount) => void }) {
+function CreateDiscountDialog({
+  plans,
+  onCreate,
+}: {
+  plans: MembershipPlan[];
+  onCreate: (d: Parameters<typeof createDiscount>[0]) => Promise<MembershipDiscount>;
+}) {
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [type, setType] = useState<"percentage" | "fixed">("percentage");
   const [value, setValue] = useState(10);
-  const [start, setStart] = useState("2025-12-01");
-  const [end, setEnd] = useState("2026-01-31");
+  const [start, setStart] = useState(today);
+  const [end, setEnd] = useState(() => {
+    const d = new Date();
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    return d.toISOString().slice(0, 10);
+  });
   const [selected, setSelected] = useState<string[]>([]);
   const [active, setActive] = useState(true);
 
-  function submit() {
+  async function submit() {
     if (!name.trim() || !code.trim()) { toast.error("Name and code are required"); return; }
-    onCreate({
-      id: `ds-${Date.now()}`, name, code: code.toUpperCase(),
-      type, value, startDate: start, endDate: end,
-      applicablePlanIds: selected, active, used: 0,
-    });
-    toast.success(`Discount "${name}" created`);
-    setOpen(false);
-    setName(""); setCode("");
+    setSaving(true);
+    try {
+      await onCreate({
+        name: name.trim(),
+        code: code.trim().toUpperCase(),
+        type,
+        value,
+        startDate: start,
+        endDate: end,
+        applicablePlanIds: selected,
+        active,
+      });
+      toast.success(`Discount "${name}" created`);
+      setOpen(false);
+      setName(""); setCode(""); setSelected([]);
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not create discount"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -575,8 +732,15 @@ function CreateDiscountDialog({ plans, onCreate }: { plans: MembershipPlan[]; on
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit} className="bg-gradient-primary text-primary-foreground shadow-glow">Create discount</Button>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+          <Button
+            onClick={() => void submit()}
+            disabled={saving}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+            Create discount
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -584,22 +748,96 @@ function CreateDiscountDialog({ plans, onCreate }: { plans: MembershipPlan[]; on
 }
 
 /* ============= ASSIGN MEMBERSHIP SECTION ============= */
-function AssignMembershipSection({ plans, discounts }: { plans: MembershipPlan[]; discounts: Discount[] }) {
-  const [memberId, setMemberId] = useState(members[0].id);
-  const [planId, setPlanId] = useState(plans[0]?.id ?? "");
+function AssignMembershipSection({
+  plans,
+  discounts,
+  onAssigned,
+}: {
+  plans: MembershipPlan[];
+  discounts: MembershipDiscount[];
+  onAssigned?: () => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [memberQuery, setMemberQuery] = useState("");
+  const [searchHits, setSearchHits] = useState<MemberSearchHit[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [member, setMember] = useState<MemberSearchHit | null>(null);
+  const [planId, setPlanId] = useState(plans.find((p) => p.status === "active")?.id ?? plans[0]?.id ?? "");
   const [discountId, setDiscountId] = useState<string>("none");
   const [useCustom, setUseCustom] = useState(false);
   const [customPrice, setCustomPrice] = useState(0);
   const [customReason, setCustomReason] = useState("");
-  const [startDate, setStartDate] = useState("2025-12-01");
+  const [startDate, setStartDate] = useState(today);
   const [method, setMethod] = useState("UPI");
   const [notes, setNotes] = useState("");
+  const [replaceActive, setReplaceActive] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!planId) {
+      const first = plans.find((p) => p.status === "active") ?? plans[0];
+      if (first) setPlanId(first.id);
+    }
+  }, [plans, planId]);
+
+  useEffect(() => {
+    const q = memberQuery.trim();
+    if (member || q.length < 2) {
+      setSearchHits([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          const hits = await searchMembers(q, 15);
+          setSearchHits(hits);
+          setSearchOpen(true);
+        } catch (error) {
+          toast.error(formatApiError(error, "Could not search members"));
+          setSearchHits([]);
+        } finally {
+          setSearching(false);
+        }
+      })();
+    }, 250);
+    return () => clearTimeout(t);
+  }, [memberQuery, member]);
 
   const plan = plans.find((p) => p.id === planId) ?? plans[0];
   const discount = discountId === "none" ? null : discounts.find((d) => d.id === discountId) ?? null;
   const pricing = computePricing(plan?.basePrice ?? 0, plan?.registrationFee ?? 0, plan?.gstPercent ?? 0,
     discount ? { type: discount.type, value: discount.value } : null);
   const finalAmount = useCustom ? customPrice : pricing.final;
+
+  const activeMembership = member?.currentMembership?.status === "active"
+    ? member.currentMembership
+    : null;
+
+  const minStartDate = useMemo(() => {
+    const join = member?.joinDate || today;
+    if (activeMembership?.endDate && !replaceActive) {
+      const renewFrom = addDaysISO(activeMembership.endDate, 1);
+      return renewFrom > join ? renewFrom : join;
+    }
+    return join;
+  }, [member?.joinDate, activeMembership?.endDate, replaceActive, today]);
+
+  useEffect(() => {
+    setReplaceActive(false);
+  }, [member?.id]);
+
+  useEffect(() => {
+    if (!member) return;
+    if (replaceActive) {
+      const join = member.joinDate || today;
+      setStartDate(join > today ? join : today);
+    } else {
+      setStartDate(minStartDate);
+    }
+  }, [member?.id, replaceActive, minStartDate, member, today]);
 
   const endDate = useMemo(() => {
     if (!plan) return startDate;
@@ -612,32 +850,163 @@ function AssignMembershipSection({ plans, discounts }: { plans: MembershipPlan[]
     return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
   }, [startDate, plan]);
 
-  const member = members.find((m) => m.id === memberId)!;
+  const startBeforeJoin = Boolean(member?.joinDate && startDate < member.joinDate);
+  const overlapsActive = Boolean(
+    activeMembership?.endDate
+    && startDate <= activeMembership.endDate
+    && endDate >= (activeMembership.startDate || startDate),
+  );
 
-  function submit() {
-    toast.success(`Membership assigned to ${member.name}`, {
-      description: `${plan.name} · ${inr(finalAmount)} · Expires ${endDate}`,
-    });
+  function selectMember(m: MemberSearchHit) {
+    setMember(m);
+    setMemberQuery(`${m.memberCode} · ${m.name}`);
+    setSearchHits([]);
+    setSearchOpen(false);
+  }
+
+  function clearMember() {
+    setMember(null);
+    setMemberQuery("");
+    setSearchHits([]);
+    setSearchOpen(false);
+    setReplaceActive(false);
+    setStartDate(today);
+  }
+
+  async function submit() {
+    if (!member || !plan) {
+      toast.error("Search and select a member first");
+      return;
+    }
+    if (member.joinDate && startDate < member.joinDate) {
+      toast.error(`Start date cannot be before join date (${member.joinDate})`);
+      return;
+    }
+    if (overlapsActive && !replaceActive) {
+      toast.error(
+        `Active membership runs until ${activeMembership?.endDate}. Renew after that date, or enable replace.`,
+      );
+      return;
+    }
+    setSaving(true);
+    try {
+      await assignMembership(member.id, {
+        planId: plan.id,
+        startDate,
+        endDate,
+        priceCharged: finalAmount,
+        paymentMethod: method,
+        replaceActive: overlapsActive ? replaceActive : false,
+        discountId: discount && pricing.discountAmt > 0 ? discount.id : null,
+        discountAmount: pricing.discountAmt > 0 ? pricing.discountAmt : null,
+        notes: [notes, useCustom && customReason ? `Custom price reason: ${customReason}` : ""]
+          .filter(Boolean)
+          .join("\n") || null,
+      });
+      toast.success(`Membership assigned to ${member.name}`, {
+        description: `${plan.name} · ${inr(finalAmount)} · Expires ${endDate}`,
+      });
+      clearMember();
+      onAssigned?.();
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not assign membership"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (plans.filter((p) => p.status === "active").length === 0) {
+    return (
+      <Card className="border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
+        Create an active plan before assigning memberships.
+      </Card>
+    );
   }
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_400px]">
-      <Card className="border-border bg-card p-6 shadow-card">
+      <Card className="border-border bg-card p-6 shadow-sm">
         <h3 className="font-display text-lg font-semibold">Assign membership</h3>
-        <p className="text-sm text-muted-foreground">Select a member, choose a plan, apply discounts or negotiate a custom price.</p>
+        <p className="text-sm text-muted-foreground">
+          Search by member ID (e.g. M-1001), name, or phone — then choose a plan.
+        </p>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Member</Label>
-            <Select value={memberId} onValueChange={setMemberId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {members.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>{m.name} · {m.phone}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="relative space-y-2 md:col-span-2">
+            <Label>Find member</Label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={memberQuery}
+                onChange={(e) => {
+                  setMemberQuery(e.target.value);
+                  if (member) setMember(null);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => {
+                  if (!member && searchHits.length > 0) setSearchOpen(true);
+                }}
+                placeholder="Type M-1001, name, or phone…"
+                className="pl-9 pr-9"
+                autoComplete="off"
+              />
+              {(member || memberQuery) && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  onClick={clearMember}
+                  aria-label="Clear member"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              {searching && (
+                <Loader2 className="absolute right-9 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+              )}
+            </div>
+
+            {searchOpen && !member && memberQuery.trim().length >= 2 && (
+              <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-border bg-card shadow-lg">
+                {searchHits.length === 0 && !searching ? (
+                  <p className="px-3 py-3 text-sm text-muted-foreground">No members match “{memberQuery.trim()}”</p>
+                ) : (
+                  searchHits.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-accent/40"
+                      onClick={() => selectMember(m)}
+                    >
+                      <Avatar className="h-8 w-8">
+                        {m.photo ? <AvatarImage src={m.photo} /> : null}
+                        <AvatarFallback className="text-xs">{m.name?.[0] ?? "?"}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{m.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {m.memberCode} · {m.phone}
+                          {m.plan ? ` · ${m.plan}` : " · No plan"}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+
+            {member ? (
+              <div className="rounded-lg border border-border bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                Selected <span className="font-semibold text-foreground">{member.memberCode}</span>
+                {member.joinDate ? ` · Joined ${member.joinDate}` : ""}
+                {activeMembership?.endDate
+                  ? ` · Active until ${activeMembership.endDate}${activeMembership.planName ? ` (${activeMembership.planName})` : ""}`
+                  : ""}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Start typing at least 2 characters — exact codes like M-1001 rank first.</p>
+            )}
           </div>
+
           <div className="space-y-2">
             <Label>Plan</Label>
             <Select value={planId} onValueChange={setPlanId}>
@@ -680,13 +1049,34 @@ function AssignMembershipSection({ plans, discounts }: { plans: MembershipPlan[]
           </div>
           <div className="space-y-2">
             <Label>Start date</Label>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <Input
+              type="date"
+              min={member ? minStartDate : undefined}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              disabled={!member}
+            />
+            {startBeforeJoin ? (
+              <p className="text-xs text-destructive">Cannot start before join date ({member?.joinDate}).</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label>End date <span className="text-xs text-muted-foreground">(auto)</span></Label>
             <Input value={endDate} readOnly className="bg-muted/30" />
           </div>
         </div>
+
+        {activeMembership?.endDate ? (
+          <div className="mt-4 flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <Label className="text-sm">Replace active membership</Label>
+              <p className="text-xs text-muted-foreground">
+                Cut the current plan short and start the new one on the selected date. Leave off to renew after {activeMembership.endDate}.
+              </p>
+            </div>
+            <Switch checked={replaceActive} onCheckedChange={setReplaceActive} />
+          </div>
+        ) : null}
 
         <Separator className="my-5" />
         <div className="space-y-3">
@@ -716,16 +1106,17 @@ function AssignMembershipSection({ plans, discounts }: { plans: MembershipPlan[]
         </div>
       </Card>
 
-      {/* PREVIEW PANEL */}
-      <Card className="h-fit border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-6 shadow-glow">
+      <Card className="h-fit border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-6">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={member.photo} />
-            <AvatarFallback>{member.name[0]}</AvatarFallback>
+            {member?.photo ? <AvatarImage src={member.photo} /> : null}
+            <AvatarFallback>{member?.name?.[0] ?? "?"}</AvatarFallback>
           </Avatar>
-          <div>
-            <div className="font-semibold">{member.name}</div>
-            <div className="text-xs text-muted-foreground">{member.phone}</div>
+          <div className="min-w-0">
+            <div className="truncate font-semibold">{member?.name ?? "Search a member"}</div>
+            <div className="truncate text-xs text-muted-foreground">
+              {member ? `${member.memberCode} · ${member.phone}` : "e.g. M-1001"}
+            </div>
           </div>
         </div>
         <Separator className="my-4" />
@@ -751,20 +1142,40 @@ function AssignMembershipSection({ plans, discounts }: { plans: MembershipPlan[]
         <div className="text-xs text-muted-foreground">
           Valid from <span className="text-foreground">{startDate}</span> to <span className="text-foreground">{endDate}</span>
         </div>
-        <Button onClick={submit} className="mt-4 w-full bg-gradient-primary text-primary-foreground shadow-glow">
-          <Receipt className="mr-1 h-4 w-4" /> Confirm & record payment
+        <Button
+          onClick={() => void submit()}
+          disabled={!member || saving || startBeforeJoin || (overlapsActive && !replaceActive)}
+          className="mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Receipt className="mr-1 h-4 w-4" />}
+          Confirm & assign
         </Button>
       </Card>
     </div>
   );
 }
 
-/* ============= RENEWALS SECTION ============= */
-function RenewalsSection({ plans, discounts }: { plans: MembershipPlan[]; discounts: Discount[] }) {
-  const [filter, setFilter] = useState<"today" | "3" | "7" | "30">("7");
-  const [renewTarget, setRenewTarget] = useState<typeof expiringMemberships[number] | null>(null);
+function addDaysISO(iso: string, days: number) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+}
 
-  const filtered = expiringMemberships.filter((e) => {
+/* ============= RENEWALS SECTION ============= */
+function RenewalsSection({
+  plans,
+  discounts,
+  expiring,
+}: {
+  plans: MembershipPlan[];
+  discounts: MembershipDiscount[];
+  expiring: ExpiringMembership[];
+}) {
+  const [filter, setFilter] = useState<"today" | "3" | "7" | "30">("7");
+  const [renewTarget, setRenewTarget] = useState<ExpiringMembership | null>(null);
+
+  const filtered = expiring.filter((e) => {
     if (filter === "today") return e.daysRemaining === 0;
     if (filter === "3") return e.daysRemaining <= 3;
     if (filter === "7") return e.daysRemaining <= 7;
@@ -821,7 +1232,7 @@ function RenewalsSection({ plans, discounts }: { plans: MembershipPlan[]; discou
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9 shrink-0 ring-2 ring-border">
-                          <AvatarImage src={e.photo} />
+                          {e.photo ? <AvatarImage src={e.photo} /> : null}
                           <AvatarFallback className="bg-primary/10 text-primary font-semibold">{e.name[0]}</AvatarFallback>
                         </Avatar>
                         <span className="font-semibold">{e.name}</span>
@@ -864,8 +1275,8 @@ function RenewalsSection({ plans, discounts }: { plans: MembershipPlan[]; discou
 }
 
 function RenewDialog({ target, plans, discounts, onClose }: {
-  target: typeof expiringMemberships[number];
-  plans: MembershipPlan[]; discounts: Discount[]; onClose: () => void;
+  target: ExpiringMembership;
+  plans: MembershipPlan[]; discounts: MembershipDiscount[]; onClose: () => void;
 }) {
   const [newPlanId, setNewPlanId] = useState(target.planId);
   const [discountId, setDiscountId] = useState("none");
@@ -894,8 +1305,8 @@ function RenewDialog({ target, plans, discounts, onClose }: {
         </DialogHeader>
 
         <div className="space-y-3 rounded-lg border border-border bg-background/40 p-4 text-sm">
-          <Row label="Current plan" value={target.planName} />
-          <Row label="Current expiry" value={target.expiryDate} />
+          <Row label="Current plan" value={target.planName || "—"} />
+          <Row label="Current expiry" value={target.expiryDate || "—"} />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -961,8 +1372,6 @@ function RenewDialog({ target, plans, discounts, onClose }: {
 
 /* ============= HISTORY SECTION ============= */
 function HistorySection() {
-  const [memberId, setMemberId] = useState(members[0].id);
-  const member = members.find((m) => m.id === memberId)!;
   const iconFor = (t: string) => ({
     join: BadgeCheck, activate: Sparkles, renew: RefreshCw,
     upgrade: TrendingUp, discount: Tag, expire: AlertTriangle,
@@ -977,65 +1386,31 @@ function HistorySection() {
   } as const)[t as "join"] ?? "bg-muted";
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <Card className="h-fit border-border bg-card p-5 shadow-card">
-        <Label className="text-xs uppercase tracking-widest text-muted-foreground">View history for</Label>
-        <Select value={memberId} onValueChange={setMemberId}>
-          <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Separator className="my-4" />
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12"><AvatarImage src={member.photo} /><AvatarFallback>{member.name[0]}</AvatarFallback></Avatar>
-          <div>
-            <div className="font-semibold">{member.name}</div>
-            <div className="text-xs text-muted-foreground">{member.id} · joined {member.joinDate}</div>
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-          <div className="rounded-lg border border-border bg-background/40 p-3">
-            <div className="font-display text-xl font-bold text-gradient-primary">7</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Renewals</div>
-          </div>
-          <div className="rounded-lg border border-border bg-background/40 p-3">
-            <div className="font-display text-xl font-bold text-lime">₹28K</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Lifetime value</div>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="border-border bg-card p-6 shadow-card">
-        <h3 className="font-display text-lg font-semibold">Membership timeline</h3>
-        <p className="text-sm text-muted-foreground">Every plan change, renewal, upgrade and discount applied.</p>
-        <div className="relative mt-6">
-          <div className="absolute left-[19px] top-0 h-full w-px bg-border" />
-          <ul className="space-y-5">
-            {membershipHistorySample.map((e, i) => {
-              const Icon = iconFor(e.type);
-              return (
-                <li key={i} className="relative flex gap-4">
-                  <div className={cn("z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full ring-4 ring-card", colorFor(e.type))}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 rounded-lg border border-border bg-background/40 p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">{e.title}</div>
-                      <span className="text-xs text-muted-foreground">{e.date}</span>
-                    </div>
-                    <p className="mt-0.5 text-sm text-muted-foreground">{e.detail}</p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </Card>
-    </div>
+    <Card className="border-border bg-card p-6 shadow-sm">
+      <h3 className="font-display text-lg font-semibold">Membership history</h3>
+      <p className="mb-5 text-sm text-muted-foreground">
+        Sample timeline — live member history will appear here after more assignments.
+      </p>
+      <div className="relative space-y-0">
+        <div className="absolute bottom-2 left-[19px] top-2 w-px bg-border" />
+        {membershipHistorySample.map((h, i) => {
+          const Icon = iconFor(h.type);
+          return (
+            <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
+              <div className={cn("relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full", colorFor(h.type))}>
+                <Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 pt-1.5">
+                <div className="font-medium">{h.title}</div>
+                <div className="text-xs text-muted-foreground">{h.date} · {h.detail}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
-
 /* ============= ANALYTICS SECTION ============= */
 function AnalyticsSection() {
   const topPlan = [...revenueByPlan].sort((a, b) => b.revenue - a.revenue)[0];

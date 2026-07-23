@@ -13,6 +13,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as MemberInviteTokenRouteImport } from './routes/member-invite.$token'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AppWorkoutsRouteImport } from './routes/_app/workouts'
 import { Route as AppTrainersRouteImport } from './routes/_app/trainers'
@@ -49,6 +50,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const MemberInviteTokenRoute = MemberInviteTokenRouteImport.update({
+  id: '/member-invite/$token',
+  path: '/member-invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/trainers': typeof AppTrainersRoute
   '/workouts': typeof AppWorkoutsRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/member-invite/$token': typeof MemberInviteTokenRoute
   '/members/$id': typeof AppMembersIdRoute
   '/members/': typeof AppMembersIndexRoute
 }
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/trainers': typeof AppTrainersRoute
   '/workouts': typeof AppWorkoutsRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/member-invite/$token': typeof MemberInviteTokenRoute
   '/': typeof AppIndexRoute
   '/members/$id': typeof AppMembersIdRoute
   '/members': typeof AppMembersIndexRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/_app/trainers': typeof AppTrainersRoute
   '/_app/workouts': typeof AppWorkoutsRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/member-invite/$token': typeof MemberInviteTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/members/$id': typeof AppMembersIdRoute
   '/_app/members/': typeof AppMembersIndexRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/trainers'
     | '/workouts'
     | '/invite/$token'
+    | '/member-invite/$token'
     | '/members/$id'
     | '/members/'
   fileRoutesByTo: FileRoutesByTo
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/trainers'
     | '/workouts'
     | '/invite/$token'
+    | '/member-invite/$token'
     | '/'
     | '/members/$id'
     | '/members'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/_app/trainers'
     | '/_app/workouts'
     | '/invite/$token'
+    | '/member-invite/$token'
     | '/_app/'
     | '/_app/members/$id'
     | '/_app/members/'
@@ -279,6 +291,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  MemberInviteTokenRoute: typeof MemberInviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -310,6 +323,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/member-invite/$token': {
+      id: '/member-invite/$token'
+      path: '/member-invite/$token'
+      fullPath: '/member-invite/$token'
+      preLoaderRoute: typeof MemberInviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -480,6 +500,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   InviteTokenRoute: InviteTokenRoute,
+  MemberInviteTokenRoute: MemberInviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
