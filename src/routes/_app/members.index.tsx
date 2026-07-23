@@ -23,7 +23,7 @@ import {
 import { members } from "@/lib/data";
 
 export const Route = createFileRoute("/_app/members/")({
-  head: () => ({ meta: [{ title: "Members — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Members — GymmerzHub" }] }),
   component: MembersPage,
 });
 

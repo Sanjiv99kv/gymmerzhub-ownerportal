@@ -22,7 +22,7 @@ import {
 import { payments } from "@/lib/data";
 
 export const Route = createFileRoute("/_app/payments")({
-  head: () => ({ meta: [{ title: "Payments — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Payments — GymmerzHub" }] }),
   component: PaymentsPage,
 });
 

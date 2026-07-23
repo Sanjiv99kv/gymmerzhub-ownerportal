@@ -31,7 +31,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
-    console.error("[FitSaathi] Unhandled error:", error);
+    console.error("[GymmerzHub] Unhandled error:", error);
   }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

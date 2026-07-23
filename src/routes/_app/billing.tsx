@@ -27,7 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/billing")({
-  head: () => ({ meta: [{ title: "Billing & Invoices — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Billing & Invoices — GymmerzHub" }] }),
   component: BillingPage,
 });
 
@@ -55,7 +55,7 @@ function BillingPage() {
       <PageHeader
         badge="Billing"
         title="Bills & Invoices"
-        description="FitSaathi platform fees for your gym workspace. Member memberships are collected separately by your gym."
+        description="GymmerzHub platform fees for your gym workspace. Member memberships are collected separately by your gym."
       />
 
       <div className="space-y-6 p-6">
@@ -80,9 +80,9 @@ function BillingPage() {
                 <IndianRupee className="h-5 w-5" />
               </div>
               <div>
-                <div className="text-sm font-semibold">Gym → FitSaathi</div>
+                <div className="text-sm font-semibold">Gym → GymmerzHub</div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  After a {TRIAL_DAYS}-day free trial, you pay FitSaathi a platform fee based on your plan + active member count.
+                  After a {TRIAL_DAYS}-day free trial, you pay GymmerzHub a platform fee based on your plan + active member count.
                 </p>
               </div>
             </div>
@@ -163,7 +163,7 @@ function BillingPage() {
           <Card className="border-border bg-card shadow-card">
             <CardHeader>
               <CardTitle className="font-display">Payment method</CardTitle>
-              <CardDescription>Used for FitSaathi platform invoices</CardDescription>
+              <CardDescription>Used for GymmerzHub platform invoices</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 p-4">
@@ -195,7 +195,7 @@ function BillingPage() {
               <CardHeader>
                 <CardTitle className="font-display">Invoice history</CardTitle>
                 <CardDescription>
-                  These are FitSaathi SaaS bills for your gym — not member membership receipts.
+                  These are GymmerzHub SaaS bills for your gym — not member membership receipts.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -227,7 +227,7 @@ function BillingPage() {
               <p>
                 Member membership invoices (what members pay you) live in{" "}
                 <Link to="/payments" className="font-medium text-primary hover:underline">Payments</Link>.
-                This page only shows what <span className="font-medium text-foreground">your gym pays FitSaathi</span>.
+                This page only shows what <span className="font-medium text-foreground">your gym pays GymmerzHub</span>.
               </p>
             </div>
           </TabsContent>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 export const Route = createFileRoute("/_app/settings")({
-  head: () => ({ meta: [{ title: "Settings — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Settings — GymmerzHub" }] }),
   component: SettingsPage,
 });
 
@@ -30,10 +30,10 @@ function SettingsPage() {
             <Card className="border-border bg-card shadow-card">
               <CardHeader><CardTitle className="font-display">Gym Information</CardTitle><CardDescription>Public details shown to members.</CardDescription></CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
-                <Field label="Gym Name" defaultValue="FitSaathi Andheri" />
+                <Field label="Gym Name" defaultValue="GymmerzHub Andheri" />
                 <Field label="Owner" defaultValue="Rajesh Sharma" />
                 <Field label="Phone" defaultValue="+91 98200 11122" />
-                <Field label="Email" defaultValue="hello@fitsaathi.in" />
+                <Field label="Email" defaultValue="hello@gymmerzhub.in" />
                 <Field label="Address" defaultValue="2nd Floor, Link Road, Andheri West, Mumbai" className="md:col-span-2" />
                 <div className="md:col-span-2 flex justify-end"><Button className="bg-gradient-primary text-primary-foreground shadow-glow">Save changes</Button></div>
               </CardContent>
@@ -60,7 +60,7 @@ function SettingsPage() {
                 <Separator />
                 <Toggle label="Email" desc="Receipts and monthly statements." defaultChecked />
                 <Separator />
-                <Toggle label="Push Notifications" desc="In-app alerts on the FitSaathi member app." />
+                <Toggle label="Push Notifications" desc="In-app alerts on the GymmerzHub member app." />
               </CardContent>
             </Card>
           </TabsContent>

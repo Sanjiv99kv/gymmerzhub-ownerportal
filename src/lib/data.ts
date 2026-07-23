@@ -1,4 +1,4 @@
-// Sample data for FitSaathi
+// Sample data for GymmerzHub
 export type MemberStatus = "active" | "expired" | "suspended";
 
 export interface Member {
@@ -65,7 +65,7 @@ export const members: Member[] = names.map((name, i) => {
     id: `FS-${1000 + i}`,
     name,
     phone: `+91 9${String(800000000 + i * 12345).slice(0, 9)}`,
-    email: name.toLowerCase().replace(" ", ".") + "@fitsaathi.in",
+    email: name.toLowerCase().replace(" ", ".") + "@gymmerzhub.in",
     age: 22 + (i % 20),
     gender: i % 2 === 0 ? "Male" : "Female",
     plan: selectedPlan,
@@ -291,7 +291,7 @@ export interface MembershipEvent {
 }
 
 export const membershipHistorySample: MembershipEvent[] = [
-  { date: "2024-01-15", title: "Joined FitSaathi", detail: "Onboarding complete · Registration ₹500", type: "join" },
+  { date: "2024-01-15", title: "Joined GymmerzHub", detail: "Onboarding complete · Registration ₹500", type: "join" },
   { date: "2024-01-15", title: "Monthly Pass activated", detail: "₹1,500 + 18% GST · Paid via UPI", type: "activate" },
   { date: "2024-02-15", title: "Renewed Monthly Pass", detail: "₹1,500 · Paid via Card", type: "renew" },
   { date: "2024-03-20", title: "Upgraded to 3 Month Plan", detail: "Saved ₹500 vs monthly", type: "upgrade" },
@@ -339,7 +339,7 @@ export const trainers = [
 export const notices = [
   { title: "Gym Closed on Republic Day", body: "We will be closed on 26th Jan. Resume operations on 27th.", date: "2025-11-20", tag: "Holiday" },
   { title: "New Hammer Strength Equipment", body: "Three new plate-loaded machines added in the strength zone.", date: "2025-11-18", tag: "Update" },
-  { title: "FitSaathi 30-Day Shred Challenge", body: "Sign up at reception. Top 3 win 6 months free Elite.", date: "2025-11-15", tag: "Challenge" },
+  { title: "GymmerzHub 30-Day Shred Challenge", body: "Sign up at reception. Top 3 win 6 months free Elite.", date: "2025-11-15", tag: "Challenge" },
   { title: "Diwali Membership Offer", body: "Flat 20% off on annual Elite plans till 5th Nov.", date: "2025-10-28", tag: "Offer" },
 ];
 

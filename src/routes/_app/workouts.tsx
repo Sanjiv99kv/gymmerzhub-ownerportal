@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/workouts")({
-  head: () => ({ meta: [{ title: "Workout Plans — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Workout Plans — GymmerzHub" }] }),
   component: WorkoutsPage,
 });
 

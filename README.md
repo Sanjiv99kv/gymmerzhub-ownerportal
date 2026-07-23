@@ -1,6 +1,6 @@
-# FitSaathi Hub
+# GymmerzHub Hub
 
-FitSaathi Hub is a modern gym management dashboard built with React and TanStack Router.  
+GymmerzHub Hub is a modern gym management dashboard built with React and TanStack Router.  
 It helps gyms manage members, attendance, payments, plans, workouts, diet plans, and revenue analytics from one place.
 
 ## Features

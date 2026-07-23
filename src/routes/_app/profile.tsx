@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/profile")({
-  head: () => ({ meta: [{ title: "Profile — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Profile — GymmerzHub" }] }),
   component: ProfilePage,
 });
 
@@ -189,7 +189,7 @@ function ProfilePage() {
               <div>
                 <h2 className="font-display text-lg font-semibold tracking-tight">Personal information</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  This is how you appear across FitSaathi and where we send billing emails.
+                  This is how you appear across GymmerzHub and where we send billing emails.
                 </p>
               </div>
 
@@ -301,7 +301,7 @@ function ProfilePage() {
               <div>
                 <h2 className="font-display text-lg font-semibold tracking-tight">Workspace</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Your gym tenant on FitSaathi. Member data here stays isolated from other gyms.
+                  Your gym tenant on GymmerzHub. Member data here stays isolated from other gyms.
                 </p>
               </div>
 

@@ -14,7 +14,7 @@ export interface PlatformPlan {
   features: string[];
 }
 
-/** FitSaathi SaaS pricing — gym owners pay this (not member memberships). */
+/** GymmerzHub SaaS pricing — gym owners pay this (not member memberships). */
 export const PLATFORM_PLANS: PlatformPlan[] = [
   {
     id: "starter",
@@ -93,8 +93,8 @@ export interface PlatformInvoice {
   description: string;
 }
 
-const SESSION_KEY = "fitsaathi.session";
-const TENANTS_KEY = "fitsaathi.tenants";
+const SESSION_KEY = "gymmerzhub.session";
+const TENANTS_KEY = "gymmerzhub.tenants";
 
 function addDaysISO(iso: string, days: number) {
   const [y, m, d] = iso.split("-").map(Number);
@@ -144,11 +144,11 @@ export function getTrialInfo(session: Pick<AuthSession, "trialEndsAt" | "billing
 export const demoTenants: GymTenant[] = [
   {
     id: "gym_andheri",
-    name: "FitSaathi Andheri",
+    name: "GymmerzHub Andheri",
     slug: "andheri",
     city: "Mumbai",
     ownerName: "Rajesh Sharma",
-    ownerEmail: "rajesh@fitsaathi.in",
+    ownerEmail: "rajesh@gymmerzhub.in",
     phone: "+91 98765 43210",
     plan: "growth",
     createdAt: addDaysISO(todayISO(), -12),
@@ -181,7 +181,7 @@ export function slugifyGymName(name: string) {
 }
 
 export function workspaceUrl(slug: string) {
-  return `${slug}.fitsaathi.com`;
+  return `${slug}.gymmerzhub.com`;
 }
 
 function readStoredTenants(): GymTenant[] {
@@ -319,7 +319,7 @@ export function formatINR(n: number) {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
 }
 
-/** Demo platform invoices for the signed-in gym (FitSaathi → gym owner). */
+/** Demo platform invoices for the signed-in gym (GymmerzHub → gym owner). */
 export function getPlatformInvoices(session: AuthSession, activeMembers: number): PlatformInvoice[] {
   const plan = getPlan(session.plan);
   const est = estimatePlatformBill(session.plan, activeMembers);

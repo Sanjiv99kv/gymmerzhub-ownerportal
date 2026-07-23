@@ -24,8 +24,8 @@ export const Route = createFileRoute("/register")({
   },
   head: () => ({
     meta: [
-      { title: "Register your gym — FitSaathi" },
-      { name: "description", content: "Create a new gym workspace on FitSaathi multi-tenant platform." },
+      { title: "Register your gym — GymmerzHub" },
+      { name: "description", content: "Create a new gym workspace on GymmerzHub multi-tenant platform." },
     ],
   }),
   component: RegisterPage,
@@ -91,7 +91,7 @@ function RegisterPage() {
   return (
     <AuthShell
       title="Register your gym"
-      subtitle={`Start with a free ${TRIAL_DAYS}-day trial. After that, pay FitSaathi based on your plan + active members. Member memberships stay your revenue.`}
+      subtitle={`Start with a free ${TRIAL_DAYS}-day trial. After that, pay GymmerzHub based on your plan + active members. Member memberships stay your revenue.`}
       footer={
         <>
           Already have a workspace?{" "}
@@ -133,7 +133,7 @@ function RegisterPage() {
               required
             />
             <span className="flex items-center border-l border-border bg-muted/60 px-3 text-xs text-muted-foreground whitespace-nowrap">
-              .fitsaathi.com
+              .gymmerzhub.com
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -272,7 +272,7 @@ function RegisterPage() {
         </Button>
 
         <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-          Members pay you for gym memberships. You pay FitSaathi a platform fee after trial, based on active members.
+          Members pay you for gym memberships. You pay GymmerzHub a platform fee after trial, based on active members.
         </p>
       </form>
     </AuthShell>

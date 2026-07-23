@@ -73,7 +73,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="min-w-0 leading-tight">
               <div className="truncate font-display text-sm font-extrabold tracking-tight text-foreground">
-                {session?.gymName ?? "FitSaathi"}
+                {session?.gymName ?? "GymmerzHub"}
               </div>
               <div className="truncate text-[10px] font-medium text-muted-foreground">
                 {session ? workspaceUrl(session.gymSlug) : "Gym Management"}

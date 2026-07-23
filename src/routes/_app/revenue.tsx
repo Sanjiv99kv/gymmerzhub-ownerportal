@@ -25,7 +25,7 @@ import {
 } from "@/lib/chart-theme";
 
 export const Route = createFileRoute("/_app/revenue")({
-  head: () => ({ meta: [{ title: "Revenue Analytics — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Revenue Analytics — GymmerzHub" }] }),
   component: RevenuePage,
 });
 

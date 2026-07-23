@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_app/diet")({
-  head: () => ({ meta: [{ title: "Diet Plans — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Diet Plans — GymmerzHub" }] }),
   component: DietPage,
 });
 

@@ -14,8 +14,8 @@ export const Route = createFileRoute("/login")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in — FitSaathi" },
-      { name: "description", content: "Sign in to your gym workspace on FitSaathi." },
+      { title: "Sign in — GymmerzHub" },
+      { name: "description", content: "Sign in to your gym workspace on GymmerzHub." },
     ],
   }),
   component: LoginPage,
@@ -24,8 +24,8 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const [slug, setSlug] = useState("andheri");
-  const [email, setEmail] = useState("rajesh@fitsaathi.in");
-  const [password, setPassword] = useState("fitsaathi");
+  const [email, setEmail] = useState("rajesh@gymmerzhub.in");
+  const [password, setPassword] = useState("gymmerzhub");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +50,7 @@ function LoginPage() {
       subtitle="Access your gym workspace. Platform billing starts after your free trial — member memberships stay your revenue."
       footer={
         <>
-          New gym on FitSaathi?{" "}
+          New gym on GymmerzHub?{" "}
           <Link to="/register" className="font-semibold text-primary hover:underline">
             Create a workspace
           </Link>
@@ -71,7 +71,7 @@ function LoginPage() {
               required
             />
             <span className="flex items-center border-l border-border bg-muted/60 px-3 text-xs text-muted-foreground whitespace-nowrap">
-              .fitsaathi.com
+              .gymmerzhub.com
             </span>
           </div>
           <p className="text-xs text-muted-foreground">

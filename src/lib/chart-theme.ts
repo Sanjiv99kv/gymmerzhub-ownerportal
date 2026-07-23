@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-/** Shared chart styles for the light FitSaathi theme */
+/** Shared chart styles for the light GymmerzHub theme */
 export const chartTooltipStyle: CSSProperties = {
   backgroundColor: "oklch(1 0 0)",
   border: "1px solid oklch(0.9 0.01 255)",

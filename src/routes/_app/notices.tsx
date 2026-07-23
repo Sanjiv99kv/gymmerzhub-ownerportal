@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { notices } from "@/lib/data";
 
 export const Route = createFileRoute("/_app/notices")({
-  head: () => ({ meta: [{ title: "Notices — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Notices — GymmerzHub" }] }),
   component: NoticesPage,
 });
 

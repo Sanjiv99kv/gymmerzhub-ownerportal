@@ -41,7 +41,7 @@ export function AuthShell({
             </h2>
             <p className="text-[15px] leading-relaxed text-slate-300">
               Each gym gets its own workspace. Members pay you for memberships.
-              You pay FitSaathi a simple platform fee based on active member count after trial.
+              You pay GymmerzHub a simple platform fee based on active member count after trial.
             </p>
             <div className="grid grid-cols-3 gap-3 pt-2">
               {[
@@ -58,7 +58,7 @@ export function AuthShell({
           </div>
 
           <p className="relative z-10 text-xs text-slate-500">
-            © {new Date().getFullYear()} FitSaathi · Gym management for India
+            © {new Date().getFullYear()} GymmerzHub · Gym management for India
           </p>
         </aside>
 

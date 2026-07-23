@@ -51,7 +51,7 @@ import {
 } from "@/lib/chart-theme";
 
 export const Route = createFileRoute("/_app/plans")({
-  head: () => ({ meta: [{ title: "Membership Management — FitSaathi" }] }),
+  head: () => ({ meta: [{ title: "Membership Management — GymmerzHub" }] }),
   component: PlansPage,
 });
 

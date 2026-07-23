@@ -18,7 +18,7 @@ import { estimatePlatformBill, formatINR, getSession, getTrialInfo } from "@/lib
 export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — FitSaathi" },
+      { title: "Dashboard — GymmerzHub" },
       { name: "description", content: "Executive overview of members, attendance, payments, and revenue for your gym." },
     ],
   }),
