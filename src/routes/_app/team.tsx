@@ -47,10 +47,14 @@ import {
 
 export const Route = createFileRoute("/_app/team")({
   head: () => ({ meta: [{ title: "Team — GymmerzHub" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    invite: search.invite === "trainer" ? ("trainer" as const) : undefined,
+  }),
   component: TeamPage,
 });
 
 function TeamPage() {
+  const { invite: invitePrefill } = Route.useSearch();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<StaffInvite[]>([]);
   const [roles, setRoles] = useState<GymRole[]>([]);
@@ -64,7 +68,7 @@ function TeamPage() {
   const [email, setEmail] = useState("");
   const [gymRoleId, setGymRoleId] = useState("");
 
-  async function load() {
+  async function load(preferTrainerInvite = false) {
     setLoading(true);
     try {
       const [team, inviteData, roleData] = await Promise.all([
@@ -76,18 +80,31 @@ function TeamPage() {
       setInvites(inviteData.invites);
       setExpiresHours(inviteData.expiresHours);
       setRoles(roleData.roles);
-      if (!gymRoleId && roleData.roles[0]) {
-        setGymRoleId(roleData.roles[0].id);
-      }
+      const trainerId = roleData.roles.find((r) => r.slug === "trainer")?.id;
+      const defaultId = preferTrainerInvite
+        ? trainerId || roleData.roles[0]?.id || ""
+        : roleData.roles.find((r) => r.slug === "operator")?.id || roleData.roles[0]?.id || "";
+      if (!gymRoleId && defaultId) setGymRoleId(defaultId);
+      return { roles: roleData.roles, trainerId };
     } catch (error) {
       toast.error(formatApiError(error, "Could not load team"));
+      return { roles: [] as GymRole[], trainerId: undefined as string | undefined };
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    void load();
+    void (async () => {
+      const preferTrainer = invitePrefill === "trainer";
+      const { trainerId, roles: loadedRoles } = await load(preferTrainer);
+      if (preferTrainer) {
+        setFullName("");
+        setEmail("");
+        setGymRoleId(trainerId || loadedRoles[0]?.id || "");
+        setDialogOpen(true);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

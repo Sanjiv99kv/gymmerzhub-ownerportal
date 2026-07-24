@@ -29,6 +29,9 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 
 let expiringSession = false;
 
+/** Collapse concurrent identical GETs into one network call. */
+const inflightGets = new Map<string, Promise<unknown>>();
+
 function handleUnauthorizedSession() {
   if (expiringSession) return;
   expiringSession = true;
@@ -60,19 +63,40 @@ async function parseJsonResponse<T>(response: Response, token?: string | null): 
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, token, headers, ...rest } = options;
+  const method = String(rest.method || "GET").toUpperCase();
+  const canDedupe = method === "GET" && body === undefined;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...rest,
-    headers: {
-      Accept: "application/json",
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  if (canDedupe) {
+    const key = `${token || ""}:${method}:${path}`;
+    const existing = inflightGets.get(key);
+    if (existing) return existing as Promise<T>;
+  }
 
-  return parseJsonResponse<T>(response, token);
+  const request = (async () => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...rest,
+      method,
+      headers: {
+        Accept: "application/json",
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...headers,
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+    return parseJsonResponse<T>(response, token);
+  })();
+
+  if (canDedupe) {
+    const key = `${token || ""}:${method}:${path}`;
+    inflightGets.set(key, request);
+    void request.finally(() => {
+      if (inflightGets.get(key) === request) inflightGets.delete(key);
+    });
+  }
+
+  return request;
 }
 
 /** Multipart upload (do not set Content-Type — browser sets boundary). */

@@ -1,5 +1,7 @@
 import { apiRequest } from "@/lib/api";
 import { getAccessToken } from "@/lib/tenant";
+import { fetchMemberDiet, type MemberDietAssignment } from "@/lib/diet-api";
+import { fetchMemberWorkout, type MemberWorkoutAssignment } from "@/lib/workout-api";
 
 export type DurationUnit = "days" | "weeks" | "months" | "years";
 export type PlanStatus = "active" | "inactive";
@@ -45,24 +47,39 @@ export type MemberMembership = {
   createdAt: string | null;
 };
 
+export type GymMemberListItem = {
+  id: string;
+  memberCode: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  photo: string | null;
+  status: MemberStatus;
+  joinDate: string | null;
+  plan: string | null;
+  planId: string | null;
+  expiryDate: string | null;
+  attendance: number;
+  appAccess?: {
+    linked: boolean;
+    inviteStatus: string | null;
+    pendingInviteId: string | null;
+  };
+};
+
 export type GymMember = {
   id: string;
   gymId: string;
   memberCode: string;
   fullName: string;
-  name: string;
   phone: string;
   email: string | null;
   age: number | null;
   gender: MemberGender | null;
   photoUrl: string | null;
-  photo: string | null;
   status: MemberStatus;
   joinDate: string | null;
   notes: string | null;
-  plan: string | null;
-  planId: string | null;
-  expiryDate: string | null;
   currentMembership: MemberMembership | null;
   attendance: number;
   appAccess?: {
@@ -73,6 +90,8 @@ export type GymMember = {
     pendingInviteId: string | null;
     inviteExpiresAt: string | null;
   };
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 export type ExpiringMembership = {
@@ -185,7 +204,7 @@ export async function fetchMembers(params?: { status?: string; q?: string }) {
   if (params?.status && params.status !== "all") sp.set("status", params.status);
   if (params?.q) sp.set("q", params.q);
   const qs = sp.toString() ? `?${sp}` : "";
-  const res = await apiRequest<ApiSuccess<{ members: GymMember[] }>>(
+  const res = await apiRequest<ApiSuccess<{ members: GymMemberListItem[] }>>(
     `/api/owner/members${qs}`,
     { method: "GET", token: tokenOrThrow() },
   );
@@ -222,11 +241,11 @@ export async function searchMembers(q: string, limit = 15) {
 }
 
 export async function fetchMember(memberId: string) {
-  const res = await apiRequest<ApiSuccess<{ member: GymMember; memberships: MemberMembership[] }>>(
+  const res = await apiRequest<ApiSuccess<{ member: GymMember }>>(
     `/api/owner/members/${memberId}`,
     { method: "GET", token: tokenOrThrow() },
   );
-  return res.data;
+  return res.data.member;
 }
 
 export async function createMember(body: {
@@ -558,20 +577,23 @@ export async function deleteMemberNote(memberId: string, noteId: string) {
 }
 
 export async function fetchMemberDetailBundle(memberId: string) {
-  const [core, history, payments, activities, notes] = await Promise.all([
+  const [member, history, payments, activities, notes, diet, workout] = await Promise.all([
     fetchMember(memberId),
     fetchMemberHistory(memberId),
     fetchMemberPayments(memberId),
     fetchMemberActivity(memberId),
     fetchMemberNotes(memberId),
+    fetchMemberDiet(memberId).catch(() => null as MemberDietAssignment | null),
+    fetchMemberWorkout(memberId).catch(() => null as MemberWorkoutAssignment | null),
   ]);
   return {
-    member: core.member,
-    memberships: core.memberships,
+    member,
     history,
     payments: payments.payments,
     paymentSummary: payments.summary,
     activities,
     notes,
+    diet,
+    workout,
   };
 }

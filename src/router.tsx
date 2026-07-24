@@ -9,7 +9,10 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    // Reuse loader data briefly so preload/navigation (and Strict Mode remounts)
+    // don't fire the same GETs twice.
+    defaultStaleTime: 30_000,
+    defaultPreloadStaleTime: 30_000,
   });
 
   return router;

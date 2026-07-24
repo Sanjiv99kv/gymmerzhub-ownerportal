@@ -39,7 +39,7 @@ import {
   inviteMemberToApp,
   revokeMemberAppInvite,
   updateMember,
-  type GymMember,
+  type GymMemberListItem,
   type MemberGender,
   type MembershipPlan,
 } from "@/lib/membership-api";
@@ -164,7 +164,7 @@ function MembersPage() {
   const canWrite = hasPermission(session, "members.write");
   const canDelete = hasPermission(session, "members.delete") || canWrite;
 
-  const [members, setMembers] = useState<GymMember[]>([]);
+  const [members, setMembers] = useState<GymMemberListItem[]>([]);
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [stats, setStats] = useState({ totalMembers: 0, activeMembers: 0, expiringThisWeek: 0, activeMemberships: 0 });
   const [loading, setLoading] = useState(true);
@@ -216,13 +216,13 @@ function MembersPage() {
   }
 
   useEffect(() => {
-    void load();
-  }, [status]);
-
-  useEffect(() => {
-    const t = setTimeout(() => { void load(); }, 300);
+    const t = setTimeout(() => {
+      void load();
+    }, q.trim() ? 300 : 0);
     return () => clearTimeout(t);
-  }, [q]);
+    // load reads latest status/q from closure on each run
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional filter-driven reload
+  }, [status, q]);
 
   const onSort = (key: SortKey) =>
     setSort((prev) =>
@@ -302,7 +302,7 @@ function MembersPage() {
     }
   }
 
-  async function onSuspend(m: GymMember) {
+  async function onSuspend(m: GymMemberListItem) {
     try {
       await updateMember(m.id, { status: m.status === "suspended" ? "active" : "suspended" });
       toast.success(m.status === "suspended" ? "Member reactivated" : "Member suspended");
@@ -312,7 +312,7 @@ function MembersPage() {
     }
   }
 
-  async function onDelete(m: GymMember) {
+  async function onDelete(m: GymMemberListItem) {
     if (!window.confirm(`Delete ${m.name}?`)) return;
     try {
       await deleteMember(m.id);
@@ -323,7 +323,7 @@ function MembersPage() {
     }
   }
 
-  async function onInviteToApp(m: GymMember) {
+  async function onInviteToApp(m: GymMemberListItem) {
     if (!m.email) {
       toast.error("Add an email on this member before inviting to the app");
       return;
@@ -346,7 +346,7 @@ function MembersPage() {
     }
   }
 
-  async function onRevokeInvite(m: GymMember) {
+  async function onRevokeInvite(m: GymMemberListItem) {
     const inviteId = m.appAccess?.pendingInviteId;
     if (!inviteId) return;
     try {
