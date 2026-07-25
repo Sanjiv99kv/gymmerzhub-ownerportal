@@ -53,6 +53,7 @@ import {
   getTrialInfo,
   setSession,
   workspaceUrl,
+  TRIAL_MEMBER_LIMIT,
   type AuthSession,
 } from "@/lib/tenant";
 import { cn } from "@/lib/utils";
@@ -448,7 +449,7 @@ function ProfilePage() {
               </div>
             </div>
             <Badge variant="outline" className="w-fit border-border bg-background/80">
-              {plan.name} plan
+              {trial.isTrialing ? "Free trial" : plan ? `${plan.name} plan` : "No plan"}
             </Badge>
           </div>
         </Card>
@@ -884,7 +885,13 @@ function ProfilePage() {
                   <MetaRow label="Location" value={location || "—"} />
                   <MetaRow
                     label="Plan"
-                    value={`${plan.name} · up to ${plan.memberLimit} members`}
+                    value={
+                      trial.isTrialing
+                        ? `Trial · up to ${TRIAL_MEMBER_LIMIT} members`
+                        : plan
+                          ? `${plan.name} · up to ${plan.memberLimit ?? "∞"} members`
+                          : "Choose a plan on Billing"
+                    }
                   />
                   <MetaRow
                     label={trial.isTrialing ? "Trial ends" : "Joined"}

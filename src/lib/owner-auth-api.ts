@@ -24,7 +24,7 @@ export type OwnerGym = {
   address: string | null;
   phone: string | null;
   status: string;
-  platformPlan: GymPlan;
+  platformPlan: GymPlan | null;
   billingStatus: BillingStatus;
   trialEndsAt: string | null;
   workspaceUrl: string;
@@ -90,7 +90,6 @@ export type OwnerRegisterInput = {
   email: string;
   phone: string;
   password: string;
-  plan: GymPlan;
 };
 
 export function checkOwnerSlug(slug: string) {

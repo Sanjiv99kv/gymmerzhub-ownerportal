@@ -95,7 +95,7 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground">
                 After {trial.trialEndsAt}, estimated platform bill is{" "}
                 <span className="font-medium text-foreground">{estBill ? formatINR(estBill.total) : "—"}/mo</span>{" "}
-                for {kpis.activeMemberships} active members (incl. GST). Member memberships remain your revenue.
+                for {kpis.activeMemberships} active members. Member memberships remain your revenue.
               </p>
             </div>
           </div>

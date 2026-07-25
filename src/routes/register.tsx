@@ -31,12 +31,9 @@ import {
   getSession,
   slugifyGymName,
   workspaceUrl,
-  PLATFORM_PLANS,
   TRIAL_DAYS,
-  formatINR,
   setSession,
   sessionFromAuthData,
-  type GymPlan,
 } from "@/lib/tenant";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +63,6 @@ function RegisterPage() {
   const [ownerName, setOwnerName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [plan, setPlan] = useState<GymPlan>("starter");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -189,7 +185,6 @@ function RegisterPage() {
         email,
         phone,
         password,
-        plan,
       });
       setDevOtp(result.data.devOtp ?? null);
       setStep("otp");
@@ -311,7 +306,7 @@ function RegisterPage() {
   return (
     <AuthShell
       title="Register your gym"
-      subtitle={`Start with a free ${TRIAL_DAYS}-day trial. After that, pay GymmerzHub based on your plan + active members. Member memberships stay your revenue.`}
+      subtitle={`Start with a free ${TRIAL_DAYS}-day trial. Choose and pay for a plan when the trial ends. Member memberships stay your revenue.`}
       footer={
         <>
           Already have a workspace?{" "}
@@ -379,36 +374,6 @@ function RegisterPage() {
               </>
             )}
           </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Choose plan (billed after trial)</Label>
-          <div className="grid gap-2">
-            {PLATFORM_PLANS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPlan(p.id)}
-                className={cn(
-                  "rounded-xl border px-3.5 py-3 text-left transition-colors",
-                  plan === p.id
-                    ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                    : "border-border bg-card hover:bg-muted/40",
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-semibold">{p.name}</div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {formatINR(p.monthlyFee)}
-                    <span className="font-normal text-muted-foreground">/mo</span>
-                  </div>
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  + {formatINR(p.perMemberFee)}/member · up to {p.memberLimit} members
-                </p>
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
