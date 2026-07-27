@@ -1,5 +1,4 @@
 import { apiFormRequest, apiRequest } from "@/lib/api";
-import type { GymPlan, BillingStatus } from "@/lib/tenant";
 
 export type OwnerUser = {
   id: string;
@@ -24,9 +23,6 @@ export type OwnerGym = {
   address: string | null;
   phone: string | null;
   status: string;
-  platformPlan: GymPlan | null;
-  billingStatus: BillingStatus;
-  trialEndsAt: string | null;
   workspaceUrl: string;
   createdAt: string | null;
 };

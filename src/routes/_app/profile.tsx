@@ -48,12 +48,9 @@ import {
   type OwnerSession,
 } from "@/lib/owner-auth-api";
 import {
-  getPlan,
   getSession,
-  getTrialInfo,
   setSession,
   workspaceUrl,
-  TRIAL_MEMBER_LIMIT,
   type AuthSession,
 } from "@/lib/tenant";
 import { cn } from "@/lib/utils";
@@ -178,8 +175,6 @@ function ProfilePage() {
 
   if (!session) return null;
 
-  const plan = getPlan(session.plan);
-  const trial = getTrialInfo(session);
   const ws = workspaceUrl(session.gymSlug);
   const location = [session.address, session.city, session.state].filter(Boolean).join(", ");
   const initials = session.ownerName
@@ -883,32 +878,10 @@ function ProfilePage() {
                     }
                   />
                   <MetaRow label="Location" value={location || "—"} />
-                  <MetaRow
-                    label="Plan"
-                    value={
-                      trial.isTrialing
-                        ? `Trial · up to ${TRIAL_MEMBER_LIMIT} members`
-                        : plan
-                          ? `${plan.name} · up to ${plan.memberLimit ?? "∞"} members`
-                          : "Choose a plan on Billing"
-                    }
-                  />
-                  <MetaRow
-                    label={trial.isTrialing ? "Trial ends" : "Joined"}
-                    value={trial.isTrialing ? trial.trialEndsAt : session.createdAt}
-                  />
-                  {trial.isTrialing && (
-                    <MetaRow
-                      label="Trial status"
-                      value={`${trial.daysLeft} days left · ${trial.elapsed} of ${trial.totalDays} used`}
-                    />
-                  )}
+                  <MetaRow label="Joined" value={session.createdAt} />
                 </div>
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2 border-t border-border px-6 py-4">
-                <Button variant="outline" asChild>
-                  <Link to="/billing">Billing</Link>
-                </Button>
                 <Button variant="outline" asChild>
                   <Link to="/settings">Settings</Link>
                 </Button>

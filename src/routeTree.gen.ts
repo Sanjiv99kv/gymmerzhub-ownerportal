@@ -27,7 +27,6 @@ import { Route as AppPlansRouteImport } from './routes/_app/plans'
 import { Route as AppPaymentsRouteImport } from './routes/_app/payments'
 import { Route as AppNoticesRouteImport } from './routes/_app/notices'
 import { Route as AppDietRouteImport } from './routes/_app/diet'
-import { Route as AppBillingRouteImport } from './routes/_app/billing'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppMembersIndexRouteImport } from './routes/_app/members.index'
 import { Route as AppMembersIdRouteImport } from './routes/_app/members.$id'
@@ -121,11 +120,6 @@ const AppDietRoute = AppDietRouteImport.update({
   path: '/diet',
   getParentRoute: () => AppRoute,
 } as any)
-const AppBillingRoute = AppBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAttendanceRoute = AppAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -147,7 +141,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/attendance': typeof AppAttendanceRoute
-  '/billing': typeof AppBillingRoute
   '/diet': typeof AppDietRoute
   '/notices': typeof AppNoticesRoute
   '/payments': typeof AppPaymentsRoute
@@ -169,7 +162,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/attendance': typeof AppAttendanceRoute
-  '/billing': typeof AppBillingRoute
   '/diet': typeof AppDietRoute
   '/notices': typeof AppNoticesRoute
   '/payments': typeof AppPaymentsRoute
@@ -194,7 +186,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/_app/attendance': typeof AppAttendanceRoute
-  '/_app/billing': typeof AppBillingRoute
   '/_app/diet': typeof AppDietRoute
   '/_app/notices': typeof AppNoticesRoute
   '/_app/payments': typeof AppPaymentsRoute
@@ -220,7 +211,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/attendance'
-    | '/billing'
     | '/diet'
     | '/notices'
     | '/payments'
@@ -242,7 +232,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/attendance'
-    | '/billing'
     | '/diet'
     | '/notices'
     | '/payments'
@@ -266,7 +255,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/_app/attendance'
-    | '/_app/billing'
     | '/_app/diet'
     | '/_app/notices'
     | '/_app/payments'
@@ -422,13 +410,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDietRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/billing': {
-      id: '/_app/billing'
-      path: '/billing'
-      fullPath: '/billing'
-      preLoaderRoute: typeof AppBillingRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/attendance': {
       id: '/_app/attendance'
       path: '/attendance'
@@ -455,7 +436,6 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
-  AppBillingRoute: typeof AppBillingRoute
   AppDietRoute: typeof AppDietRoute
   AppNoticesRoute: typeof AppNoticesRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
@@ -475,7 +455,6 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
-  AppBillingRoute: AppBillingRoute,
   AppDietRoute: AppDietRoute,
   AppNoticesRoute: AppNoticesRoute,
   AppPaymentsRoute: AppPaymentsRoute,

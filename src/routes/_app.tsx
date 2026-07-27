@@ -2,10 +2,6 @@ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/topbar";
-import {
-  BillingSuspendedBanner,
-  BillingSuspendedPageLock,
-} from "@/components/billing-suspended-gate";
 import { ApiError } from "@/lib/api";
 import { fetchOwnerMe } from "@/lib/owner-auth-api";
 import { canAccessPath, firstAllowedPath } from "@/lib/permissions";
@@ -13,8 +9,6 @@ import {
   clearSession,
   getSession,
   setSession,
-  type BillingStatus,
-  type GymPlan,
 } from "@/lib/tenant";
 
 const SESSION_CHECK_TTL_MS = 30_000;
@@ -55,11 +49,6 @@ export const Route = createFileRoute("/_app")({
             : membership?.role === "owner"
               ? session.permissionKeys
               : [],
-          plan: (gym?.platformPlan as GymPlan | null) ?? null,
-          billingStatus: (gym?.billingStatus as BillingStatus) || session.billingStatus,
-          trialEndsAt: gym?.trialEndsAt
-            ? String(gym.trialEndsAt).slice(0, 10)
-            : session.trialEndsAt,
         };
         setSession(next);
         lastCheckedToken = session.token;
@@ -79,7 +68,6 @@ export const Route = createFileRoute("/_app")({
         if (error && typeof error === "object" && "to" in (error as object)) {
           throw error;
         }
-        // Allow the shell to load on transient network errors.
       }
     }
 
@@ -98,11 +86,8 @@ function AppLayout() {
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           <TopBar />
-          <BillingSuspendedBanner />
           <main className="flex-1">
-            <BillingSuspendedPageLock>
-              <Outlet />
-            </BillingSuspendedPageLock>
+            <Outlet />
           </main>
         </SidebarInset>
       </div>

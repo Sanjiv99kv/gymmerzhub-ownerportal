@@ -14,7 +14,6 @@ const ROUTE_PERMISSIONS: Array<{ prefix: string; permission: string | null }> = 
   { prefix: "/workouts", permission: "workouts.read" },
   { prefix: "/team", permission: "team.read" },
   { prefix: "/roles", permission: "team.write" },
-  { prefix: "/billing", permission: "billing.read" },
   { prefix: "/reports", permission: "reports.read" },
   { prefix: "/settings", permission: "settings.read" },
   // Dashboard: always available to authenticated hub users

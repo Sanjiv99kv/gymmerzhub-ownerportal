@@ -141,7 +141,7 @@ function LoginPage() {
   return (
     <AuthShell
       title="Sign in to your gym"
-      subtitle="Access your gym workspace. Platform billing starts after your free trial — member memberships stay your revenue."
+      subtitle="Access your gym workspace — manage members, attendance, and member payments."
       footer={
         <>
           New gym on GymmerzHub?{" "}

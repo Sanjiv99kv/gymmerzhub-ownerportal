@@ -2,14 +2,14 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, BadgeCheck, CalendarCheck, Wallet, BarChart3,
   Dumbbell, Megaphone, Salad, Activity, FileText, Settings, LogOut, User,
-  Receipt, Shield, UserPlus, Lock,
+  UserPlus, Shield,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { isBillingSuspended, isSuspendedPathAllowed, useAuthSession } from "@/components/billing-suspended-gate";
+import { getSession } from "@/lib/tenant";
 import { hasPermission, isOwnerSession } from "@/lib/permissions";
 import { workspaceUrl } from "@/lib/tenant";
 import { logoutOwnerSession } from "@/lib/auth-session";
@@ -33,7 +33,6 @@ const programs = [
 const system = [
   { title: "Team", url: "/team", icon: UserPlus, permission: "team.read" },
   { title: "Roles & Permissions", url: "/roles", icon: Shield, permission: "team.write" },
-  { title: "Billing & Invoices", url: "/billing", icon: Receipt, permission: "billing.read" },
   { title: "Reports", url: "/reports", icon: FileText, permission: "reports.read" },
   { title: "Settings", url: "/settings", icon: Settings, permission: "settings.read" },
 ];
@@ -43,8 +42,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const session = useAuthSession();
-  const suspended = isBillingSuspended(session);
+  const session = getSession();
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
   const logout = async () => {
@@ -64,38 +62,21 @@ export function AppSidebar() {
   const systemItems = system.filter((item) => canSee(item.permission));
 
   const renderItems = (items: typeof main) =>
-    items.map((item) => {
-      const locked = suspended && !isSuspendedPathAllowed(item.url);
-      if (locked) {
-        return (
-          <SidebarMenuItem key={item.title}>
-            <SidebarMenuButton
-              tooltip={`${item.title} (suspended)`}
-              disabled
-              className="pointer-events-none opacity-45"
-            >
-              <Lock className="h-4 w-4" />
-              <span>{item.title}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        );
-      }
-      return (
-        <SidebarMenuItem key={item.title}>
-          <SidebarMenuButton
-            asChild
-            isActive={isActive(item.url)}
-            tooltip={item.title}
-            className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:font-semibold hover:bg-sidebar-accent transition-colors"
-          >
-            <Link to={item.url}>
-              <item.icon className="h-4 w-4" />
-              <span>{item.title}</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      );
-    });
+    items.map((item) => (
+      <SidebarMenuItem key={item.title}>
+        <SidebarMenuButton
+          asChild
+          isActive={isActive(item.url)}
+          tooltip={item.title}
+          className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:font-semibold hover:bg-sidebar-accent transition-colors"
+        >
+          <Link to={item.url}>
+            <item.icon className="h-4 w-4" />
+            <span>{item.title}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    ));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar shadow-sm">
@@ -110,11 +91,7 @@ export function AppSidebar() {
                 {session?.gymName ?? "GymmerzHub"}
               </div>
               <div className="truncate text-[10px] font-medium text-muted-foreground">
-                {suspended
-                  ? "Suspended — pay invoices"
-                  : session
-                    ? workspaceUrl(session.gymSlug)
-                    : "Gym Management"}
+                {session ? workspaceUrl(session.gymSlug) : "Gym Management"}
               </div>
             </div>
           )}
