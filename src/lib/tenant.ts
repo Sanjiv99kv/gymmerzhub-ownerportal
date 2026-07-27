@@ -1,86 +1,4 @@
-/** Multi-tenant gym workspace + SaaS billing helpers (demo / localStorage). */
-
-export type GymPlan =
-  | "starter"
-  | "growth"
-  | "pro"
-  | "scale"
-  | "max"
-  | "enterprise";
-export type BillingStatus = "trialing" | "active" | "past_due" | "suspended" | "canceled";
-export type InvoiceStatus = "paid" | "due" | "overdue" | "void" | "upcoming";
-
-export interface PlatformPlan {
-  id: GymPlan;
-  name: string;
-  tagline: string;
-  /** null = unlimited (enterprise) */
-  memberLimit: number | null;
-  graceMembers: number;
-  monthlyFee: number;
-  features: string[];
-}
-
-/** GymmerzHub SaaS capacity plans (matches backend platform_plans). */
-export const PLATFORM_PLANS: PlatformPlan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    tagline: "Up to 100 active members",
-    memberLimit: 100,
-    graceMembers: 10,
-    monthlyFee: 1999,
-    features: ["All features", "1 gym workspace", "Email support"],
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    tagline: "Up to 300 active members",
-    memberLimit: 300,
-    graceMembers: 30,
-    monthlyFee: 3999,
-    features: ["All features", "Priority support"],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    tagline: "Up to 500 active members",
-    memberLimit: 500,
-    graceMembers: 50,
-    monthlyFee: 5499,
-    features: ["All features", "Priority support"],
-  },
-  {
-    id: "scale",
-    name: "Scale",
-    tagline: "Up to 700 active members",
-    memberLimit: 700,
-    graceMembers: 70,
-    monthlyFee: 6999,
-    features: ["All features", "Dedicated success"],
-  },
-  {
-    id: "max",
-    name: "Max",
-    tagline: "Up to 1,000 active members",
-    memberLimit: 1000,
-    graceMembers: 100,
-    monthlyFee: 9799,
-    features: ["All features", "Highest self-serve capacity"],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    tagline: "Unlimited / custom — contact sales",
-    memberLimit: null,
-    graceMembers: 0,
-    monthlyFee: 0,
-    features: ["Custom capacity", "Custom onboarding", "Volume pricing"],
-  },
-];
-
-export const TRIAL_DAYS = 7;
-export const TRIAL_MEMBER_LIMIT = 30;
+/** Multi-tenant gym workspace session helpers (localStorage). */
 
 export interface GymTenant {
   id: string;
@@ -90,10 +8,7 @@ export interface GymTenant {
   ownerName: string;
   ownerEmail: string;
   phone: string;
-  plan: GymPlan | null;
   createdAt: string;
-  trialEndsAt: string;
-  billingStatus: BillingStatus;
 }
 
 export interface AuthSession {
@@ -108,88 +23,27 @@ export interface AuthSession {
   emailVerified: boolean;
   hubRole?: string;
   hubRoleName?: string | null;
-  /** Assigned gym-role permission keys. Owners get all keys from the API. */
   permissionKeys?: string[];
   mfaSetupRequired?: boolean;
   state: string;
   stateCode: string;
   city: string;
   address: string;
-  plan: GymPlan | null;
-  trialEndsAt: string;
-  billingStatus: BillingStatus;
   createdAt: string;
-}
-
-export interface PlatformInvoice {
-  id: string;
-  gymId: string;
-  gymName: string;
-  number: string;
-  periodLabel: string;
-  issuedAt: string;
-  dueAt: string;
-  paidAt?: string;
-  status: InvoiceStatus;
-  plan: GymPlan | null;
-  activeMembers: number;
-  baseFee: number;
-  tax: number;
-  total: number;
-  description: string;
 }
 
 const SESSION_KEY = "gymmerzhub.session";
 const TENANTS_KEY = "gymmerzhub.tenants";
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function addDaysISO(iso: string, days: number) {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + days);
   return dt.toISOString().slice(0, 10);
-}
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function daysBetween(from: string, to: string) {
-  const a = new Date(`${from}T00:00:00Z`).getTime();
-  const b = new Date(`${to}T00:00:00Z`).getTime();
-  return Math.ceil((b - a) / (1000 * 60 * 60 * 24));
-}
-
-export function getPlan(plan: GymPlan | string | null | undefined) {
-  if (!plan) return null;
-  const aliases: Record<string, GymPlan> = { max_flat: "max" };
-  const id = (aliases[plan] || plan) as GymPlan;
-  return PLATFORM_PLANS.find((p) => p.id === id) ?? null;
-}
-
-/** Platform bill = flat plan monthly fee. */
-export function estimatePlatformBill(plan: GymPlan | null | undefined, activeMembers: number) {
-  const p = getPlan(plan);
-  if (!p) {
-    return { billable: Math.max(activeMembers, 0), baseFee: 0, subtotal: 0, tax: 0, total: 0, memberLimit: TRIAL_MEMBER_LIMIT };
-  }
-  const billable = Math.max(activeMembers, 0);
-  const baseFee = p.monthlyFee;
-  const subtotal = baseFee;
-  const tax = 0;
-  const total = subtotal;
-  return { billable, baseFee, subtotal, tax, total, memberLimit: p.memberLimit };
-}
-
-export function getTrialInfo(session: Pick<AuthSession, "trialEndsAt" | "billingStatus" | "createdAt">) {
-  const today = todayISO();
-  const trialEndsAt = session.trialEndsAt || addDaysISO(session.createdAt || today, TRIAL_DAYS);
-  const daysLeft = Math.max(0, daysBetween(today, trialEndsAt));
-  const status = session.billingStatus || "trialing";
-  const isTrialing = status === "trialing" && daysLeft > 0;
-  const trialExpired = status === "trialing" && daysLeft <= 0;
-  const totalDays = TRIAL_DAYS;
-  const elapsed = Math.min(totalDays, Math.max(0, totalDays - daysLeft));
-  return { daysLeft, isTrialing, trialExpired, totalDays, elapsed, trialEndsAt };
 }
 
 export const demoTenants: GymTenant[] = [
@@ -201,10 +55,7 @@ export const demoTenants: GymTenant[] = [
     ownerName: "Rajesh Sharma",
     ownerEmail: "rajesh@gymmerzhub.in",
     phone: "+91 98765 43210",
-    plan: "growth",
     createdAt: addDaysISO(todayISO(), -12),
-    trialEndsAt: addDaysISO(todayISO(), 18),
-    billingStatus: "trialing",
   },
   {
     id: "gym_koramangala",
@@ -214,10 +65,7 @@ export const demoTenants: GymTenant[] = [
     ownerName: "Ananya Iyer",
     ownerEmail: "ananya@irontemple.in",
     phone: "+91 98111 22334",
-    plan: "starter",
     createdAt: addDaysISO(todayISO(), -45),
-    trialEndsAt: addDaysISO(todayISO(), -15),
-    billingStatus: "active",
   },
 ];
 
@@ -273,7 +121,6 @@ export function getSession(): AuthSession | null {
       cachedSessionValue = null;
       return null;
     }
-    // Stable snapshot for useSyncExternalStore — parse only when storage changes.
     if (raw === cachedSessionRaw) return cachedSessionValue;
     const parsed = JSON.parse(raw) as AuthSession;
     if (!parsed?.token || !parsed?.gymId) {
@@ -325,7 +172,6 @@ export function clearSession() {
   }
 }
 
-/** React subscription to local auth session (re-renders on setSession/clearSession). */
 export function subscribeSession(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
   const handler = () => onStoreChange();
@@ -337,7 +183,6 @@ export function subscribeSession(onStoreChange: () => void) {
   };
 }
 
-/** Clear local auth and send the owner to login (used when session is missing/revoked). */
 export function expireSessionToLogin() {
   clearSession();
   if (typeof window === "undefined") return;
@@ -366,9 +211,6 @@ export function sessionFromAuthData(data: {
     stateCode: string | null;
     city: string | null;
     address: string | null;
-    platformPlan: GymPlan | null;
-    billingStatus: BillingStatus;
-    trialEndsAt: string | null;
     createdAt: string | null;
   };
   membership?: {
@@ -380,7 +222,6 @@ export function sessionFromAuthData(data: {
   mfaSetupRequired?: boolean;
 }): AuthSession {
   const createdAt = (data.gym.createdAt || new Date().toISOString()).slice(0, 10);
-  const trialEndsAt = (data.gym.trialEndsAt || addDaysISO(createdAt, TRIAL_DAYS)).slice(0, 10);
   const hubRole = data.membership?.role || "owner";
 
   return {
@@ -405,9 +246,6 @@ export function sessionFromAuthData(data: {
     stateCode: data.gym.stateCode || "",
     city: data.gym.city || "",
     address: data.gym.address || "",
-    plan: data.gym.platformPlan ?? null,
-    trialEndsAt,
-    billingStatus: data.gym.billingStatus,
     createdAt,
   };
 }
@@ -426,9 +264,6 @@ export function sessionFromTenant(tenant: GymTenant): AuthSession {
     stateCode: "",
     city: tenant.city,
     address: "",
-    plan: tenant.plan,
-    trialEndsAt: tenant.trialEndsAt,
-    billingStatus: tenant.billingStatus,
     createdAt: tenant.createdAt,
   };
 }
@@ -440,7 +275,6 @@ export function registerGym(input: {
   ownerName: string;
   ownerEmail: string;
   phone: string;
-  plan: GymPlan;
 }): { ok: true; tenant: GymTenant } | { ok: false; error: string } {
   const slug = slugifyGymName(input.slug || input.name);
   if (!slug) return { ok: false, error: "Enter a valid workspace URL." };
@@ -460,10 +294,7 @@ export function registerGym(input: {
     ownerName: input.ownerName.trim(),
     ownerEmail: input.ownerEmail.trim().toLowerCase(),
     phone: input.phone.trim(),
-    plan: input.plan,
     createdAt,
-    trialEndsAt: addDaysISO(createdAt, TRIAL_DAYS),
-    billingStatus: "trialing",
   };
 
   writeStoredTenant(tenant);
@@ -503,100 +334,4 @@ export function loginGym(input: {
 
 export function formatINR(n: number) {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
-}
-
-/** Demo platform invoices for the signed-in gym (GymmerzHub → gym owner). */
-export function getPlatformInvoices(session: AuthSession, activeMembers: number): PlatformInvoice[] {
-  const plan = getPlan(session.plan);
-  const est = estimatePlatformBill(session.plan, activeMembers);
-  const trial = getTrialInfo(session);
-
-  const upcoming: PlatformInvoice = {
-    id: `inv_upcoming_${session.gymId}`,
-    gymId: session.gymId,
-    gymName: session.gymName,
-    number: "FS-DRAFT",
-    periodLabel: "Next billing cycle",
-    issuedAt: session.trialEndsAt,
-    dueAt: addDaysISO(session.trialEndsAt, 7),
-    status: "upcoming",
-    plan: session.plan,
-    activeMembers: est.billable,
-    baseFee: est.baseFee,
-    tax: est.tax,
-    total: est.total,
-    description: trial.isTrialing
-      ? `First invoice after ${TRIAL_DAYS}-day free trial — choose a plan on Billing`
-      : plan
-        ? `${plan.name} plan · ${est.billable} active members`
-        : `Platform fee · ${est.billable} active members`,
-  };
-
-  if (session.billingStatus === "trialing") {
-    return [upcoming];
-  }
-
-  const paid1 = estimatePlatformBill(session.plan, Math.max(activeMembers - 20, 40));
-  const paid2 = estimatePlatformBill(session.plan, Math.max(activeMembers - 8, 55));
-  const due = estimatePlatformBill(session.plan, activeMembers);
-
-  return [
-    upcoming,
-    {
-      id: `inv_due_${session.gymId}`,
-      gymId: session.gymId,
-      gymName: session.gymName,
-      number: "FS-2026-0312",
-      periodLabel: "Jun 2026",
-      issuedAt: addDaysISO(todayISO(), -5),
-      dueAt: addDaysISO(todayISO(), 2),
-      status: "due",
-      plan: session.plan,
-      activeMembers: due.billable,
-      baseFee: due.baseFee,
-      tax: due.tax,
-      total: due.total,
-      description: plan
-        ? `${plan.name} plan · platform fee for Jun 2026`
-        : "Platform fee for Jun 2026",
-    },
-    {
-      id: `inv_paid_2_${session.gymId}`,
-      gymId: session.gymId,
-      gymName: session.gymName,
-      number: "FS-2026-0288",
-      periodLabel: "May 2026",
-      issuedAt: addDaysISO(todayISO(), -35),
-      dueAt: addDaysISO(todayISO(), -28),
-      paidAt: addDaysISO(todayISO(), -30),
-      status: "paid",
-      plan: session.plan,
-      activeMembers: paid2.billable,
-      baseFee: paid2.baseFee,
-      tax: paid2.tax,
-      total: paid2.total,
-      description: plan
-        ? `${plan.name} plan · platform fee for May 2026`
-        : "Platform fee for May 2026",
-    },
-    {
-      id: `inv_paid_1_${session.gymId}`,
-      gymId: session.gymId,
-      gymName: session.gymName,
-      number: "FS-2026-0241",
-      periodLabel: "Apr 2026",
-      issuedAt: addDaysISO(todayISO(), -65),
-      dueAt: addDaysISO(todayISO(), -58),
-      paidAt: addDaysISO(todayISO(), -60),
-      status: "paid",
-      plan: session.plan,
-      activeMembers: paid1.billable,
-      baseFee: paid1.baseFee,
-      tax: paid1.tax,
-      total: paid1.total,
-      description: plan
-        ? `${plan.name} plan · platform fee for Apr 2026`
-        : "Platform fee for Apr 2026",
-    },
-  ];
 }

@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, BadgeCheck, CalendarCheck, Wallet, ArrowUpRight, FileText, Sparkles } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Users, BadgeCheck, CalendarCheck, Wallet, ArrowUpRight } from "lucide-react";
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -13,7 +13,7 @@ import { kpis, membershipGrowth, revenueData, attendanceTrends, members, notices
 import {
   chartTooltipStyle, chartGrid, chartCursor, chartAxis, chartColors,
 } from "@/lib/chart-theme";
-import { estimatePlatformBill, formatINR, getSession, getTrialInfo } from "@/lib/tenant";
+import { getSession } from "@/lib/tenant";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -29,10 +29,6 @@ function DashboardPage() {
   const session = getSession();
   const ownerFirst = session?.ownerName?.split(" ")[0] ?? "there";
   const gymLabel = session?.gymName ?? "your gym";
-  const trial = session ? getTrialInfo(session) : null;
-  const estBill = session
-    ? estimatePlatformBill(session.plan, kpis.activeMemberships)
-    : null;
 
   const monthlyCount = members.filter((m) => m.plan === "Monthly").length;
   const yearlyCount = members.filter((m) => m.plan === "Yearly").length;
@@ -70,40 +66,11 @@ function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/billing">
-              <FileText className="mr-1.5 h-4 w-4" />
-              Bills & Invoices
-            </Link>
-          </Button>
           <Button>
             Add New Member <ArrowUpRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </section>
-
-      {trial?.isTrialing && (
-        <section className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="font-semibold text-foreground">
-                Free trial · {trial.daysLeft} days remaining
-              </div>
-              <p className="text-sm text-muted-foreground">
-                After {trial.trialEndsAt}, estimated platform bill is{" "}
-                <span className="font-medium text-foreground">{estBill ? formatINR(estBill.total) : "—"}/mo</span>{" "}
-                for {kpis.activeMemberships} active members. Member memberships remain your revenue.
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" className="shrink-0 border-primary/30 bg-card" asChild>
-            <Link to="/billing">View billing</Link>
-          </Button>
-        </section>
-      )}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Total Members" value={kpis.totalMembers.toLocaleString("en-IN")} delta={12} icon={Users} accent="primary" />

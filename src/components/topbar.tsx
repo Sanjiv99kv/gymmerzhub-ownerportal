@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { hasPermission, isOwnerSession } from "@/lib/permissions";
-import { getSession, getTrialInfo } from "@/lib/tenant";
+import { getSession } from "@/lib/tenant";
 import { logoutOwnerSession } from "@/lib/auth-session";
 
 function ownerInitials(name?: string) {
@@ -27,14 +27,13 @@ export function TopBar() {
   const navigate = useNavigate();
   const session = getSession();
   const firstName = session?.ownerName?.split(" ")[0] ?? "Owner";
-  const trial = session ? getTrialInfo(session) : null;
+  const roleLabel = session?.hubRoleName || session?.hubRole || "owner";
   const showQuickActions =
     isOwnerSession(session)
     || hasPermission(session, "members.write")
     || hasPermission(session, "plans.write")
     || hasPermission(session, "payments.write")
     || hasPermission(session, "notices.write");
-  const canBilling = hasPermission(session, "billing.read");
   const canSettings = hasPermission(session, "settings.read");
 
   const logout = async () => {
@@ -61,17 +60,6 @@ export function TopBar() {
           <Badge variant="outline" className="border-border bg-muted/40 font-medium text-muted-foreground">
             {session.gymName}
           </Badge>
-          {trial?.isTrialing && canBilling && (
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/billing" })}
-              className="rounded-full"
-            >
-              <Badge variant="outline" className="cursor-pointer border-primary/30 bg-primary/10 font-medium text-primary hover:bg-primary/15">
-                Trial · {trial.daysLeft}d left
-              </Badge>
-            </button>
-          )}
         </div>
       )}
 
@@ -120,7 +108,7 @@ export function TopBar() {
               </Avatar>
               <div className="hidden text-left leading-tight md:block">
                 <div className="text-xs font-semibold">{firstName}</div>
-                <div className="text-[10px] capitalize text-muted-foreground">{session?.plan ?? "owner"}</div>
+                <div className="text-[10px] capitalize text-muted-foreground">{roleLabel}</div>
               </div>
               <ChevronDown className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
             </button>
@@ -129,9 +117,6 @@ export function TopBar() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate({ to: "/profile" })}>Profile</DropdownMenuItem>
-            {canBilling && (
-              <DropdownMenuItem onClick={() => navigate({ to: "/billing" })}>Billing</DropdownMenuItem>
-            )}
             {canSettings && (
               <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>Settings</DropdownMenuItem>
             )}

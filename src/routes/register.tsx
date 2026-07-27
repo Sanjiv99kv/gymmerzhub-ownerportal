@@ -31,7 +31,6 @@ import {
   getSession,
   slugifyGymName,
   workspaceUrl,
-  TRIAL_DAYS,
   setSession,
   sessionFromAuthData,
 } from "@/lib/tenant";
@@ -306,7 +305,7 @@ function RegisterPage() {
   return (
     <AuthShell
       title="Register your gym"
-      subtitle={`Start with a free ${TRIAL_DAYS}-day trial. Choose and pay for a plan when the trial ends. Member memberships stay your revenue.`}
+      subtitle="Create your gym workspace on GymmerzHub — manage members, attendance, and notices."
       footer={
         <>
           Already have a workspace?{" "}
@@ -317,11 +316,6 @@ function RegisterPage() {
       }
     >
       <form onSubmit={onRegisterSubmit} className="space-y-4">
-        <div className="rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-3 text-sm">
-          <span className="font-semibold text-primary">{TRIAL_DAYS} days free</span>
-          <span className="text-muted-foreground"> — no platform charges until trial ends.</span>
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="gymName">Gym name</Label>
           <Input
