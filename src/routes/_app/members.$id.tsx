@@ -70,8 +70,8 @@ const attendanceHistory = [
 
 const historyTypeColors: Record<string, string> = {
   join:     "bg-success text-success-foreground",
-  purchase: "bg-primary text-primary-foreground",
-  renew:    "bg-primary text-primary-foreground",
+  purchase: "bg-lime text-lime-foreground",
+  renew:    "bg-lime text-lime-foreground",
   discount: "bg-lime text-lime-foreground",
   upgrade:  "bg-warning text-warning-foreground",
   freeze:   "bg-muted-foreground text-background",

@@ -194,7 +194,7 @@ function RolesPage() {
           <p className="text-sm text-muted-foreground max-w-xl">
             Owners always have full access. Assign these roles when you invite staff.
           </p>
-          <Button onClick={openCreate} className="bg-primary text-primary-foreground">
+          <Button onClick={openCreate} className="bg-lime text-lime-foreground">
             <Plus className="mr-2 h-4 w-4" />
             Create role
           </Button>
@@ -404,7 +404,7 @@ function RolesPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={() => void saveRole()} disabled={saving} className="bg-primary text-primary-foreground">
+            <Button onClick={() => void saveRole()} disabled={saving} className="bg-lime text-lime-foreground">
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

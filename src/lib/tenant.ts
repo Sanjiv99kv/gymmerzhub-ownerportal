@@ -24,7 +24,6 @@ export interface AuthSession {
   hubRole?: string;
   hubRoleName?: string | null;
   permissionKeys?: string[];
-  mfaSetupRequired?: boolean;
   state: string;
   stateCode: string;
   city: string;
@@ -198,30 +197,17 @@ export function sessionFromAuthData(data: {
   user: {
     fullName: string;
     email: string;
-    phone?: string | null;
-    emailVerifiedAt?: string | null;
-    emailVerified?: boolean;
-    avatarUrl?: string | null;
   };
   gym: {
     id: string;
     name: string;
     slug: string;
-    state: string | null;
-    stateCode: string | null;
-    city: string | null;
-    address: string | null;
-    createdAt: string | null;
   };
   membership?: {
     role?: string;
     gymRoleName?: string | null;
-    permissionKeys?: string[];
-    mfaSetupRequired?: boolean;
   };
-  mfaSetupRequired?: boolean;
 }): AuthSession {
-  const createdAt = (data.gym.createdAt || new Date().toISOString()).slice(0, 10);
   const hubRole = data.membership?.role || "owner";
 
   return {
@@ -231,22 +217,18 @@ export function sessionFromAuthData(data: {
     gymSlug: data.gym.slug,
     ownerName: data.user.fullName,
     ownerEmail: data.user.email,
-    ownerPhone: data.user.phone ?? null,
-    ownerAvatarUrl: data.user.avatarUrl ?? null,
-    emailVerified: Boolean(data.user.emailVerified ?? data.user.emailVerifiedAt),
+    ownerPhone: null,
+    ownerAvatarUrl: null,
+    emailVerified: true,
     hubRole,
     hubRoleName: data.membership?.gymRoleName ?? (hubRole === "owner" ? "Owner" : null),
-    permissionKeys: Array.isArray(data.membership?.permissionKeys)
-      ? data.membership.permissionKeys
-      : hubRole === "owner"
-        ? undefined
-        : [],
-    mfaSetupRequired: Boolean(data.mfaSetupRequired ?? data.membership?.mfaSetupRequired),
-    state: data.gym.state || "",
-    stateCode: data.gym.stateCode || "",
-    city: data.gym.city || "",
-    address: data.gym.address || "",
-    createdAt,
+    // Force /_app to hydrate permissions + full profile via /me
+    permissionKeys: undefined,
+    state: "",
+    stateCode: "",
+    city: "",
+    address: "",
+    createdAt: new Date().toISOString().slice(0, 10),
   };
 }
 

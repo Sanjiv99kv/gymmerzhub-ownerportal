@@ -70,13 +70,8 @@ function AcceptInvitePage() {
     try {
       const result = await acceptStaffInvite(token, password);
       setSession(sessionFromAuthData(result.data));
-      if (result.data.mfaSetupRequired) {
-        toast.message("Account created — set up MFA in Profile → Security");
-        navigate({ to: "/profile" });
-      } else {
-        toast.success(`Welcome to ${result.data.gym.name}`);
-        navigate({ to: "/" });
-      }
+      toast.success(`Welcome to ${result.data.gym.name}`);
+      navigate({ to: "/" });
     } catch (error) {
       toast.error(formatApiError(error, "Could not accept invitation"));
     } finally {
@@ -135,7 +130,6 @@ function AcceptInvitePage() {
           <div className="text-muted-foreground">{preview.email}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             Role: {preview.roleName}
-            {preview.mfaRequired ? " · MFA required" : ""}
           </div>
         </div>
 

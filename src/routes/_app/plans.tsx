@@ -525,7 +525,7 @@ function CreatePlanDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={() => void submit()} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button onClick={() => void submit()} disabled={saving} className="bg-lime text-lime-foreground hover:bg-lime/90">
             {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
             Create plan
           </Button>
@@ -736,7 +736,7 @@ function CreateDiscountDialog({
           <Button
             onClick={() => void submit()}
             disabled={saving}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className="bg-lime text-lime-foreground hover:bg-lime/90"
           >
             {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
             Create discount
@@ -1145,7 +1145,7 @@ function AssignMembershipSection({
         <Button
           onClick={() => void submit()}
           disabled={!member || saving || startBeforeJoin || (overlapsActive && !replaceActive)}
-          className="mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          className="mt-4 w-full bg-lime text-lime-foreground hover:bg-lime/90"
         >
           {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Receipt className="mr-1 h-4 w-4" />}
           Confirm & assign
@@ -1377,7 +1377,7 @@ function HistorySection() {
     upgrade: TrendingUp, discount: Tag, expire: AlertTriangle,
   } as const)[t as "join"] ?? History;
   const colorFor = (t: string) => ({
-    join: "bg-primary text-primary-foreground",
+    join: "bg-lime text-lime-foreground",
     activate: "bg-lime/20 text-lime",
     renew: "bg-success/20 text-success",
     upgrade: "bg-gradient-primary text-primary-foreground",

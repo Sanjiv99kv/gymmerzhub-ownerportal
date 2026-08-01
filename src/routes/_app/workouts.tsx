@@ -126,7 +126,7 @@ function ExerciseMedia({
       )}
       {exercise.videoUrl ? (
         <span className="absolute inset-0 grid place-items-center bg-black/30">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-lime text-lime-foreground">
             <Play className="h-3 w-3 fill-current" />
           </span>
         </span>

@@ -18,7 +18,6 @@ export type StaffInvite = {
   id: string;
   email: string;
   fullName: string;
-  mfaRequired: boolean;
   role: { id: string; name: string; slug: string } | null;
   expiresAt: string | null;
   acceptedAt: string | null;
@@ -32,7 +31,6 @@ export type TeamMember = {
   id: string;
   role: string;
   status: string;
-  mfaRequired: boolean;
   gymRole: { id: string; name: string; slug: string } | null;
   user: {
     id: string;
@@ -48,7 +46,6 @@ export type TeamMember = {
 export type StaffInvitePreview = {
   fullName: string;
   email: string;
-  mfaRequired: boolean;
   gymName: string;
   gymSlug: string | null;
   roleName: string;
@@ -82,7 +79,7 @@ export async function createStaffInvite(body: {
   >("/api/owner/staff/invites", {
     method: "POST",
     token: tokenOrThrow(),
-    body: { ...body, mfaRequired: false },
+    body,
   });
   return res;
 }
@@ -100,7 +97,6 @@ export async function updateTeamMember(
   body: {
     gymRoleId?: string;
     status?: "active" | "suspended";
-    mfaRequired?: boolean;
   },
 ) {
   const res = await apiRequest<ApiSuccess<{ member: TeamMember }>>(
@@ -119,7 +115,7 @@ export async function previewStaffInvite(token: string) {
 }
 
 export async function acceptStaffInvite(token: string, password: string) {
-  const res = await apiRequest<ApiSuccess<OwnerAuthData & { mfaSetupRequired?: boolean }>>(
+  const res = await apiRequest<ApiSuccess<OwnerAuthData>>(
     `/api/owner/staff/invites/accept/${encodeURIComponent(token)}`,
     { method: "POST", body: { password } },
   );

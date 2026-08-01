@@ -4,10 +4,12 @@ import type { AuthSession } from "@/lib/tenant";
 const ROUTE_PERMISSIONS: Array<{ prefix: string; permission: string | null }> = [
   { prefix: "/profile", permission: null },
   { prefix: "/members", permission: "members.read" },
+  { prefix: "/approvals", permission: "members.read" },
   { prefix: "/plans", permission: "plans.read" },
   { prefix: "/attendance", permission: "attendance.read" },
   { prefix: "/payments", permission: "payments.read" },
   { prefix: "/revenue", permission: "revenue.read" },
+  { prefix: "/revenue-share", permission: "revenue.read" },
   { prefix: "/trainers", permission: "trainers.read" },
   { prefix: "/notices", permission: "notices.read" },
   { prefix: "/diet", permission: "diet.read" },

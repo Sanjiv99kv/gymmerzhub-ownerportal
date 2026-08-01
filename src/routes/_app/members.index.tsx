@@ -367,7 +367,7 @@ function MembersPage() {
         action={
           canWrite ? (
             <Button
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-lime text-lime-foreground hover:bg-lime/90"
               onClick={openCreateDialog}
             >
               <Plus className="mr-1 h-4 w-4" /> Add Member
@@ -655,7 +655,7 @@ function MembersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancel</Button>
-            <Button className="bg-primary text-primary-foreground" onClick={() => void submitCreate()} disabled={saving}>
+            <Button className="bg-lime text-lime-foreground" onClick={() => void submitCreate()} disabled={saving}>
               {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               Create member
             </Button>

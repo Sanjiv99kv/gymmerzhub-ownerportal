@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, BadgeCheck, CalendarCheck, Wallet, BarChart3,
   Dumbbell, Megaphone, Salad, Activity, FileText, Settings, LogOut, User,
-  UserPlus, Shield,
+  UserPlus, Shield, UserCheck, HandCoins,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -17,10 +17,12 @@ import { logoutOwnerSession } from "@/lib/auth-session";
 const main = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, permission: null as string | null },
   { title: "Members", url: "/members", icon: Users, permission: "members.read" },
+  { title: "Approvals", url: "/approvals", icon: UserCheck, permission: "members.read" },
   { title: "Membership Plans", url: "/plans", icon: BadgeCheck, permission: "plans.read" },
   { title: "Attendance", url: "/attendance", icon: CalendarCheck, permission: "attendance.read" },
   { title: "Payments", url: "/payments", icon: Wallet, permission: "payments.read" },
   { title: "Revenue Analytics", url: "/revenue", icon: BarChart3, permission: "revenue.read" },
+  { title: "Revenue Share", url: "/revenue-share", icon: HandCoins, permission: "revenue.read" },
 ];
 
 const programs = [

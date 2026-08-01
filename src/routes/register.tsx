@@ -515,7 +515,7 @@ function RegisterPage() {
         </Button>
 
         <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-          Members pay you for gym memberships. You pay GymmerzHub a platform fee after trial, based on active members.
+          Members join via the app. You approve them, assign memberships, and manage attendance & notices.
         </p>
       </form>
     </AuthShell>

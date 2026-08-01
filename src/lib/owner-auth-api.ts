@@ -10,7 +10,6 @@ export type OwnerUser = {
   emailVerified?: boolean;
   mfaEnabled?: boolean;
   status: string;
-  lastLoginAt: string | null;
 };
 
 export type OwnerGym = {
@@ -21,38 +20,66 @@ export type OwnerGym = {
   stateCode: string | null;
   city: string | null;
   address: string | null;
-  phone: string | null;
   status: string;
   workspaceUrl: string;
   createdAt: string | null;
 };
 
-export type OwnerAuthData = {
+/** Lean identity returned by login / select-workspace / invite accept. Full profile via /me. */
+export type OwnerSessionIdentity = {
   token: string;
-  user: OwnerUser;
-  gym: OwnerGym;
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+  };
+  gym: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   membership?: {
     role: string;
-    gymRoleId: string | null;
     gymRoleName: string | null;
-    permissionKeys?: string[];
-    mfaRequired: boolean;
-    mfaSetupRequired: boolean;
   };
-  mfaSetupRequired?: boolean;
+};
+
+export type OwnerAuthData = OwnerSessionIdentity;
+
+export type OwnerWorkspaceAccess = {
+  gymId: string;
+  name: string;
+  slug: string;
+  role: string;
+  gymRoleName: string | null;
 };
 
 export type OwnerMfaChallengeData = {
   mfaRequired: true;
   mfaToken: string;
   email: string;
-  gymName: string;
 };
 
-export type OwnerLoginData = OwnerAuthData | OwnerMfaChallengeData;
+export type OwnerWorkspaceSelectionData = {
+  selectionRequired: true;
+  selectionToken: string;
+  email: string;
+  workspaces: OwnerWorkspaceAccess[];
+};
+
+export type OwnerLoginData =
+  | OwnerAuthData
+  | OwnerMfaChallengeData
+  | OwnerWorkspaceSelectionData;
 
 export function isOwnerMfaChallenge(data: OwnerLoginData): data is OwnerMfaChallengeData {
   return "mfaRequired" in data && data.mfaRequired === true;
+}
+
+export function isOwnerWorkspaceSelection(
+  data: OwnerLoginData,
+): data is OwnerWorkspaceSelectionData {
+  return "selectionRequired" in data && data.selectionRequired === true;
 }
 
 type ApiSuccess<T> = {
@@ -114,7 +141,7 @@ export function resendOwnerOtp(input: { email: string }) {
   });
 }
 
-export function loginOwner(input: { slug: string; email: string; password: string }) {
+export function loginOwner(input: { email: string; password: string }) {
   return apiRequest<ApiSuccess<OwnerLoginData>>("/api/owner/auth/login", {
     method: "POST",
     body: input,
@@ -122,7 +149,17 @@ export function loginOwner(input: { slug: string; email: string; password: strin
 }
 
 export function verifyOwnerMfa(input: { mfaToken: string; code: string }) {
-  return apiRequest<ApiSuccess<OwnerAuthData>>("/api/owner/auth/verify-mfa", {
+  return apiRequest<ApiSuccess<OwnerAuthData | OwnerWorkspaceSelectionData>>(
+    "/api/owner/auth/verify-mfa",
+    {
+      method: "POST",
+      body: input,
+    },
+  );
+}
+
+export function selectOwnerWorkspace(input: { selectionToken: string; gymId: string }) {
+  return apiRequest<ApiSuccess<OwnerAuthData>>("/api/owner/auth/select-workspace", {
     method: "POST",
     body: input,
   });
@@ -145,8 +182,6 @@ export function fetchOwnerMe(token: string) {
         gymRoleId: string | null;
         gymRoleName: string | null;
         permissionKeys?: string[];
-        mfaRequired: boolean;
-        mfaSetupRequired: boolean;
       };
     }>
   >("/api/owner/auth/me", {
@@ -167,8 +202,7 @@ export function updateOwnerProfile(
         role: string;
         gymRoleId: string | null;
         gymRoleName: string | null;
-        mfaRequired: boolean;
-        mfaSetupRequired: boolean;
+        permissionKeys?: string[];
       };
     }>
   >("/api/owner/auth/profile", {

@@ -37,16 +37,16 @@ export function AuthShell({
 
           <div className="relative z-10 max-w-md space-y-6">
             <h2 className="font-display text-3xl font-bold leading-tight tracking-tight xl:text-4xl">
-              1 month free. Then pay only for your members.
+              Run your gym from one workspace.
             </h2>
             <p className="text-[15px] leading-relaxed text-slate-300">
-              Each gym gets its own workspace. Members pay you for memberships.
-              You pay GymmerzHub a simple platform fee based on active member count after trial.
+              Each gym gets its own hub. Approve member join requests, assign memberships,
+              and manage attendance and notices in one place.
             </p>
             <div className="grid grid-cols-3 gap-3 pt-2">
               {[
-                { v: "30 days", l: "Free trial" },
-                { v: "Per member", l: "Fair pricing" },
+                { v: "Approve", l: "Join requests" },
+                { v: "Assign", l: "Memberships" },
                 { v: "Isolated", l: "Multi-tenant" },
               ].map((item) => (
                 <div key={item.v} className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 backdrop-blur-sm">

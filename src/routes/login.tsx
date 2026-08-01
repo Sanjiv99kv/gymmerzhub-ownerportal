@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Building2, ChevronRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AuthShell } from "@/components/auth-shell";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,19 @@ import {
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { formatApiError } from "@/lib/api";
-import { isOwnerMfaChallenge, loginOwner, verifyOwnerMfa } from "@/lib/owner-auth-api";
+import {
+  isOwnerMfaChallenge,
+  isOwnerWorkspaceSelection,
+  loginOwner,
+  selectOwnerWorkspace,
+  verifyOwnerMfa,
+  type OwnerAuthData,
+  type OwnerWorkspaceAccess,
+} from "@/lib/owner-auth-api";
 import {
   getSession,
   sessionFromAuthData,
   setSession,
-  workspaceUrl,
 } from "@/lib/tenant";
 
 export const Route = createFileRoute("/login")({
@@ -35,35 +42,49 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [slug, setSlug] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [mfaToken, setMfaToken] = useState<string | null>(null);
-  const [mfaGymName, setMfaGymName] = useState("");
   const [mfaCode, setMfaCode] = useState("");
 
-  const finishLogin = (data: Parameters<typeof sessionFromAuthData>[0]) => {
+  const [selectionToken, setSelectionToken] = useState<string | null>(null);
+  const [workspaces, setWorkspaces] = useState<OwnerWorkspaceAccess[]>([]);
+
+  const finishLogin = (data: OwnerAuthData) => {
     setSession(sessionFromAuthData(data));
     toast.success(`Welcome to ${data.gym.name}`);
     navigate({ to: "/" });
+  };
+
+  const handleLoginResult = (
+    data: Awaited<ReturnType<typeof loginOwner>>["data"],
+  ) => {
+    if (isOwnerMfaChallenge(data)) {
+      setMfaToken(data.mfaToken);
+      setMfaCode("");
+      setSelectionToken(null);
+      setWorkspaces([]);
+      toast.message("Enter the code from your authenticator app");
+      return;
+    }
+    if (isOwnerWorkspaceSelection(data)) {
+      setMfaToken(null);
+      setSelectionToken(data.selectionToken);
+      setWorkspaces(data.workspaces);
+      return;
+    }
+    finishLogin(data);
   };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const result = await loginOwner({ slug, email, password });
-      if (isOwnerMfaChallenge(result.data)) {
-        setMfaToken(result.data.mfaToken);
-        setMfaGymName(result.data.gymName);
-        setMfaCode("");
-        toast.message("Enter the code from your authenticator app");
-        return;
-      }
-      finishLogin(result.data);
+      const result = await loginOwner({ email, password });
+      handleLoginResult(result.data);
     } catch (error) {
       toast.error(formatApiError(error, "Could not sign in"));
     } finally {
@@ -81,7 +102,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const result = await verifyOwnerMfa({ mfaToken, code: mfaCode });
-      finishLogin(result.data);
+      handleLoginResult(result.data);
     } catch (error) {
       toast.error(formatApiError(error, "Could not verify MFA code"));
     } finally {
@@ -89,20 +110,82 @@ function LoginPage() {
     }
   };
 
-  if (mfaToken) {
+  const onSelectWorkspace = async (gymId: string) => {
+    if (!selectionToken) return;
+    setLoading(true);
+    try {
+      const result = await selectOwnerWorkspace({ selectionToken, gymId });
+      finishLogin(result.data);
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not open workspace"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetToCredentials = () => {
+    setMfaToken(null);
+    setMfaCode("");
+    setSelectionToken(null);
+    setWorkspaces([]);
+    setPassword("");
+  };
+
+  if (selectionToken && workspaces.length > 0) {
     return (
       <AuthShell
-        title="Two-factor authentication"
-        subtitle={`Enter the 6-digit code from your authenticator app to finish signing in to ${mfaGymName || "your workspace"}.`}
+        title="Choose a workspace"
+        subtitle="You have access to more than one gym. Pick where you want to continue."
         footer={
           <button
             type="button"
             className="font-semibold text-primary hover:underline"
-            onClick={() => {
-              setMfaToken(null);
-              setMfaCode("");
-              setPassword("");
-            }}
+            onClick={resetToCredentials}
+          >
+            Back to sign in
+          </button>
+        }
+      >
+        <div className="space-y-2">
+          {workspaces.map((ws) => (
+            <button
+              key={ws.gymId}
+              type="button"
+              disabled={loading}
+              onClick={() => void onSelectWorkspace(ws.gymId)}
+              className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary/40 hover:bg-muted/40 disabled:opacity-60"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium text-foreground">{ws.name}</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {ws.gymRoleName || ws.role}
+                </div>
+              </div>
+              {loading ? (
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              )}
+            </button>
+          ))}
+        </div>
+      </AuthShell>
+    );
+  }
+
+  if (mfaToken) {
+    return (
+      <AuthShell
+        title="Two-factor authentication"
+        subtitle="Enter the 6-digit code from your authenticator app to continue."
+        footer={
+          <button
+            type="button"
+            className="font-semibold text-primary hover:underline"
+            onClick={resetToCredentials}
           >
             Back to sign in
           </button>
@@ -140,8 +223,8 @@ function LoginPage() {
 
   return (
     <AuthShell
-      title="Sign in to your gym"
-      subtitle="Access your gym workspace — manage members, attendance, and member payments."
+      title="Sign in"
+      subtitle="Enter your email and password to access your gym workspaces."
       footer={
         <>
           New gym on GymmerzHub?{" "}
@@ -153,34 +236,13 @@ function LoginPage() {
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="slug">Gym workspace</Label>
-          <div className="flex overflow-hidden rounded-md border border-input bg-card shadow-sm focus-within:ring-1 focus-within:ring-ring">
-            <Input
-              id="slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-              placeholder="your-gym"
-              className="border-0 shadow-none focus-visible:ring-0"
-              autoComplete="organization"
-              required
-            />
-            <span className="flex items-center border-l border-border bg-muted/60 px-3 text-xs text-muted-foreground whitespace-nowrap">
-              .gymmerzhub.com
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Example: <span className="font-medium text-foreground">{workspaceUrl("powerhouse")}</span>
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="email">Owner email</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="owner@gym.com"
+            placeholder="you@gym.com"
             autoComplete="email"
             required
           />
@@ -222,7 +284,7 @@ function LoginPage() {
               Signing in…
             </>
           ) : (
-            "Sign in to workspace"
+            "Sign in"
           )}
         </Button>
       </form>

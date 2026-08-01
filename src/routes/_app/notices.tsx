@@ -212,7 +212,7 @@ function NoticesPage() {
         action={
           canWrite ? (
             <Button
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-lime text-lime-foreground hover:bg-lime/90"
               onClick={openCreate}
             >
               <Plus className="mr-1 h-4 w-4" /> Create notice
@@ -227,7 +227,7 @@ function NoticesPage() {
             key={key}
             size="sm"
             variant={filter === key ? "default" : "outline"}
-            className={cn(filter === key && "bg-primary text-primary-foreground")}
+            className={cn(filter === key && "bg-lime text-lime-foreground")}
             onClick={() => setFilter(key)}
           >
             {key === "all" ? "All" : key === "draft" ? "Drafts" : "Published"}
@@ -252,7 +252,7 @@ function NoticesPage() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-lime text-lime-foreground">
                     <Megaphone className="h-5 w-5" />
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -405,7 +405,7 @@ function NoticesPage() {
             </Button>
             <Button
               type="button"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-lime text-lime-foreground hover:bg-lime/90"
               onClick={() => void save("published")}
               disabled={saving}
             >

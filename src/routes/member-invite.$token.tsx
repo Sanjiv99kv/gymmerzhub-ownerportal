@@ -160,7 +160,7 @@ function AcceptMemberInvitePage() {
         <p className="text-xs text-muted-foreground">
           Invite expires {new Date(preview.expiresAt).toLocaleString()}
         </p>
-        <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={submitting}>
+        <Button type="submit" className="w-full bg-lime text-lime-foreground" disabled={submitting}>
           {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Activate access
         </Button>

@@ -444,7 +444,7 @@ function ProfilePage() {
               </div>
             </div>
             <Badge variant="outline" className="w-fit border-border bg-background/80">
-              {trial.isTrialing ? "Free trial" : plan ? `${plan.name} plan` : "No plan"}
+              {session.gymName}
             </Badge>
           </div>
         </Card>

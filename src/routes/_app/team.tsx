@@ -68,6 +68,8 @@ function TeamPage() {
   const [email, setEmail] = useState("");
   const [gymRoleId, setGymRoleId] = useState("");
 
+  const assignableRoles = roles.filter((role) => role.slug !== "owner");
+
   async function load(preferTrainerInvite = false) {
     setLoading(true);
     try {
@@ -80,10 +82,11 @@ function TeamPage() {
       setInvites(inviteData.invites);
       setExpiresHours(inviteData.expiresHours);
       setRoles(roleData.roles);
-      const trainerId = roleData.roles.find((r) => r.slug === "trainer")?.id;
+      const assignable = roleData.roles.filter((r) => r.slug !== "owner");
+      const trainerId = assignable.find((r) => r.slug === "trainer")?.id;
       const defaultId = preferTrainerInvite
-        ? trainerId || roleData.roles[0]?.id || ""
-        : roleData.roles.find((r) => r.slug === "operator")?.id || roleData.roles[0]?.id || "";
+        ? trainerId || assignable[0]?.id || ""
+        : assignable.find((r) => r.slug === "operator")?.id || assignable[0]?.id || "";
       if (!gymRoleId && defaultId) setGymRoleId(defaultId);
       return { roles: roleData.roles, trainerId };
     } catch (error) {
@@ -223,7 +226,7 @@ function TeamPage() {
                   </TableHeader>
                   <TableBody>
                     {members.map((m) => {
-                      const isOwner = m.role === "owner";
+                      const isOwner = m.gymRole?.slug === "owner" || m.role === "owner";
                       const busy = updatingId === m.id;
                       return (
                         <TableRow key={m.id} className={m.status === "suspended" ? "opacity-70" : undefined}>
@@ -235,7 +238,7 @@ function TeamPage() {
                             ) : (
                               <Select
                                 value={m.gymRole?.id || ""}
-                                disabled={busy || roles.length === 0}
+                                disabled={busy || assignableRoles.length === 0}
                                 onValueChange={(value) => {
                                   void patchMember(m.id, { gymRoleId: value }, "Role updated");
                                 }}
@@ -246,7 +249,7 @@ function TeamPage() {
                                   <SelectValue placeholder="Role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {roles.map((role) => (
+                                  {assignableRoles.map((role) => (
                                     <SelectItem key={role.id} value={role.id}>
                                       {role.name}
                                     </SelectItem>
@@ -393,7 +396,7 @@ function TeamPage() {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
+                  {assignableRoles.map((role) => (
                     <SelectItem key={role.id} value={role.id}>
                       {role.name}
                       {role.isSystem ? " (default)" : ""}

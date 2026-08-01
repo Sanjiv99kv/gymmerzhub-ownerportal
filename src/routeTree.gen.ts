@@ -20,6 +20,7 @@ import { Route as AppTrainersRouteImport } from './routes/_app/trainers'
 import { Route as AppTeamRouteImport } from './routes/_app/team'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppRolesRouteImport } from './routes/_app/roles'
+import { Route as AppRevenueShareRouteImport } from './routes/_app/revenue-share'
 import { Route as AppRevenueRouteImport } from './routes/_app/revenue'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -28,6 +29,7 @@ import { Route as AppPaymentsRouteImport } from './routes/_app/payments'
 import { Route as AppNoticesRouteImport } from './routes/_app/notices'
 import { Route as AppDietRouteImport } from './routes/_app/diet'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
+import { Route as AppApprovalsRouteImport } from './routes/_app/approvals'
 import { Route as AppMembersIndexRouteImport } from './routes/_app/members.index'
 import { Route as AppMembersIdRouteImport } from './routes/_app/members.$id'
 
@@ -85,6 +87,11 @@ const AppRolesRoute = AppRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRevenueShareRoute = AppRevenueShareRouteImport.update({
+  id: '/revenue-share',
+  path: '/revenue-share',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRevenueRoute = AppRevenueRouteImport.update({
   id: '/revenue',
   path: '/revenue',
@@ -125,6 +132,11 @@ const AppAttendanceRoute = AppAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => AppRoute,
 } as any)
+const AppApprovalsRoute = AppApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMembersIndexRoute = AppMembersIndexRouteImport.update({
   id: '/members/',
   path: '/members/',
@@ -140,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/diet': typeof AppDietRoute
   '/notices': typeof AppNoticesRoute
@@ -148,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/reports': typeof AppReportsRoute
   '/revenue': typeof AppRevenueRoute
+  '/revenue-share': typeof AppRevenueShareRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
@@ -161,6 +175,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/diet': typeof AppDietRoute
   '/notices': typeof AppNoticesRoute
@@ -169,6 +184,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/reports': typeof AppReportsRoute
   '/revenue': typeof AppRevenueRoute
+  '/revenue-share': typeof AppRevenueShareRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
@@ -185,6 +201,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/diet': typeof AppDietRoute
   '/_app/notices': typeof AppNoticesRoute
@@ -193,6 +210,7 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/revenue': typeof AppRevenueRoute
+  '/_app/revenue-share': typeof AppRevenueShareRoute
   '/_app/roles': typeof AppRolesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/team': typeof AppTeamRoute
@@ -210,6 +228,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/approvals'
     | '/attendance'
     | '/diet'
     | '/notices'
@@ -218,6 +237,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/revenue'
+    | '/revenue-share'
     | '/roles'
     | '/settings'
     | '/team'
@@ -231,6 +251,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/register'
+    | '/approvals'
     | '/attendance'
     | '/diet'
     | '/notices'
@@ -239,6 +260,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/revenue'
+    | '/revenue-share'
     | '/roles'
     | '/settings'
     | '/team'
@@ -254,6 +276,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/register'
+    | '/_app/approvals'
     | '/_app/attendance'
     | '/_app/diet'
     | '/_app/notices'
@@ -262,6 +285,7 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/reports'
     | '/_app/revenue'
+    | '/_app/revenue-share'
     | '/_app/roles'
     | '/_app/settings'
     | '/_app/team'
@@ -361,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRolesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/revenue-share': {
+      id: '/_app/revenue-share'
+      path: '/revenue-share'
+      fullPath: '/revenue-share'
+      preLoaderRoute: typeof AppRevenueShareRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/revenue': {
       id: '/_app/revenue'
       path: '/revenue'
@@ -417,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/approvals': {
+      id: '/_app/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/members/': {
       id: '/_app/members/'
       path: '/members'
@@ -435,6 +473,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppDietRoute: typeof AppDietRoute
   AppNoticesRoute: typeof AppNoticesRoute
@@ -443,6 +482,7 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppReportsRoute: typeof AppReportsRoute
   AppRevenueRoute: typeof AppRevenueRoute
+  AppRevenueShareRoute: typeof AppRevenueShareRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTeamRoute: typeof AppTeamRoute
@@ -454,6 +494,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppDietRoute: AppDietRoute,
   AppNoticesRoute: AppNoticesRoute,
@@ -462,6 +503,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppReportsRoute: AppReportsRoute,
   AppRevenueRoute: AppRevenueRoute,
+  AppRevenueShareRoute: AppRevenueShareRoute,
   AppRolesRoute: AppRolesRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTeamRoute: AppTeamRoute,

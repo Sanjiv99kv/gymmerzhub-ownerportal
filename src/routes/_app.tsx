@@ -37,6 +37,9 @@ export const Route = createFileRoute("/_app")({
         const gym = me.data.gym;
         const next = {
           ...session,
+          gymName: gym.name || session.gymName,
+          gymSlug: gym.slug || session.gymSlug,
+          gymId: gym.id || session.gymId,
           ownerName: me.data.user.fullName || session.ownerName,
           ownerEmail: me.data.user.email || session.ownerEmail,
           ownerPhone: me.data.user.phone ?? session.ownerPhone ?? null,
@@ -49,6 +52,13 @@ export const Route = createFileRoute("/_app")({
             : membership?.role === "owner"
               ? session.permissionKeys
               : [],
+          state: gym.state ?? session.state ?? "",
+          stateCode: gym.stateCode ?? session.stateCode ?? "",
+          city: gym.city ?? session.city ?? "",
+          address: gym.address ?? session.address ?? "",
+          createdAt: gym.createdAt
+            ? String(gym.createdAt).slice(0, 10)
+            : session.createdAt,
         };
         setSession(next);
         lastCheckedToken = session.token;
