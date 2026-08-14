@@ -248,7 +248,7 @@ export async function fetchMember(memberId: string) {
   return res.data.member;
 }
 
-export async function createMember(body: {
+export async function createMember(_body: {
   fullName: string;
   phone: string;
   email?: string | null;
@@ -256,13 +256,8 @@ export async function createMember(body: {
   gender?: MemberGender | null;
   joinDate?: string;
   notes?: string | null;
-}) {
-  const res = await apiRequest<ApiSuccess<{ member: GymMember }>>("/api/owner/members", {
-    method: "POST",
-    token: tokenOrThrow(),
-    body,
-  });
-  return res.data.member;
+}): Promise<GymMember> {
+  throw new Error("Creating members is disabled — invite by email instead");
 }
 
 export async function updateMember(
@@ -401,14 +396,65 @@ export type MemberAppInvite = {
   inviteUrl?: string;
 };
 
-export async function inviteMemberToApp(memberId: string, email?: string | null) {
+export async function inviteMemberByEmail(body: { email: string; fullName: string }) {
   const res = await apiRequest<
-    ApiSuccess<{ invite: MemberAppInvite; emailSent: boolean; emailSkipped?: boolean }>
-  >(`/api/owner/members/${memberId}/invite`, {
+    ApiSuccess<{ invite: MemberAppInvite & { fullName?: string }; emailSent: boolean; emailSkipped?: boolean }>
+  >("/api/owner/members/invites", {
     method: "POST",
     token: tokenOrThrow(),
-    body: email ? { email } : {},
+    body,
   });
+  return res.data;
+}
+
+/** @deprecated Use inviteMemberByEmail */
+export async function inviteMemberToApp(_memberId: string, _email?: string | null) {
+  throw new Error("Invite by member id removed — use inviteMemberByEmail");
+}
+
+export async function fetchJoinRequests() {
+  const res = await apiRequest<
+    ApiSuccess<{
+      requests: Array<{
+        id: string;
+        status: string;
+        message: string | null;
+        account: { id: string; email: string; fullName: string; phone: string | null } | null;
+        createdAt: string;
+      }>;
+    }>
+  >("/api/owner/members/join-requests", {
+    method: "GET",
+    token: tokenOrThrow(),
+  });
+  return res.data.requests;
+}
+
+export async function approveJoinRequest(
+  requestId: string,
+  body: {
+    planId?: string;
+    joinDate?: string;
+    memberCode?: string;
+    startDate?: string;
+    endDate?: string;
+    paymentMethod?: string | null;
+    priceCharged?: number | null;
+    notes?: string | null;
+  },
+) {
+  const res = await apiRequest<ApiSuccess<unknown>>(
+    `/api/owner/members/join-requests/${requestId}/approve`,
+    { method: "POST", token: tokenOrThrow(), body },
+  );
+  return res.data;
+}
+
+export async function rejectJoinRequest(requestId: string, reason?: string | null) {
+  const res = await apiRequest<ApiSuccess<{ rejected: boolean }>>(
+    `/api/owner/members/join-requests/${requestId}/reject`,
+    { method: "POST", token: tokenOrThrow(), body: { reason: reason ?? null } },
+  );
   return res.data;
 }
 

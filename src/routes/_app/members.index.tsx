@@ -4,7 +4,7 @@ import {
   Search, Filter, Plus, Eye, Ban, Trash2,
   Wallet, CalendarCheck, UserCheck, AlertTriangle,
   MoreHorizontal, ChevronUp, ChevronDown, ChevronsUpDown,
-  Clock, Loader2, Send, Smartphone,
+  Clock, Loader2, Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,16 +31,14 @@ import { formatApiError } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import { getSession } from "@/lib/tenant";
 import {
-  createMember,
   deleteMember,
   fetchMemberStats,
   fetchMembers,
   fetchPlans,
-  inviteMemberToApp,
+  inviteMemberByEmail,
   revokeMemberAppInvite,
   updateMember,
   type GymMemberListItem,
-  type MemberGender,
   type MembershipPlan,
 } from "@/lib/membership-api";
 
@@ -175,25 +173,11 @@ function MembersPage() {
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-    age: "",
-    gender: "" as "" | MemberGender,
-    joinDate: new Date().toISOString().slice(0, 10),
-  });
+  const [form, setForm] = useState({ fullName: "", email: "" });
   const PER_PAGE = 10;
 
-  function openCreateDialog() {
-    setForm({
-      fullName: "",
-      phone: "",
-      email: "",
-      age: "",
-      gender: "",
-      joinDate: new Date().toISOString().slice(0, 10),
-    });
+  function openInviteDialog() {
+    setForm({ fullName: "", email: "" });
     setDialogOpen(true);
   }
 
@@ -261,42 +245,36 @@ function MembersPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const list = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  async function submitCreate() {
+  async function submitInvite() {
     if (form.fullName.trim().length < 2) {
       toast.error("Name is required");
       return;
     }
-    if (!/^\d{10}$/.test(form.phone.trim())) {
-      toast.error("Phone must be exactly 10 digits");
-      return;
-    }
-    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       toast.error("Enter a valid email");
       return;
     }
     setSaving(true);
     try {
-      await createMember({
+      const data = await inviteMemberByEmail({
         fullName: form.fullName.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim() || null,
-        age: form.age ? Number(form.age) : null,
-        gender: form.gender || null,
-        joinDate: form.joinDate || new Date().toISOString().slice(0, 10),
+        email: form.email.trim(),
       });
-      toast.success("Member created");
+      if (data.emailSent) {
+        toast.success(`Invite sent to ${form.email.trim()}`);
+      } else if (data.invite.inviteUrl) {
+        toast.message("Invite created (email skipped)", {
+          description: data.invite.inviteUrl,
+          duration: 12000,
+        });
+      } else {
+        toast.success("Invite created");
+      }
       setDialogOpen(false);
-      setForm({
-        fullName: "",
-        phone: "",
-        email: "",
-        age: "",
-        gender: "",
-        joinDate: new Date().toISOString().slice(0, 10),
-      });
+      setForm({ fullName: "", email: "" });
       await load();
     } catch (error) {
-      toast.error(formatApiError(error, "Could not create member"));
+      toast.error(formatApiError(error, "Could not send invite"));
     } finally {
       setSaving(false);
     }
@@ -323,29 +301,6 @@ function MembersPage() {
     }
   }
 
-  async function onInviteToApp(m: GymMemberListItem) {
-    if (!m.email) {
-      toast.error("Add an email on this member before inviting to the app");
-      return;
-    }
-    try {
-      const data = await inviteMemberToApp(m.id);
-      if (data.emailSent) {
-        toast.success(`Invite sent to ${m.email}`);
-      } else if (data.invite.inviteUrl) {
-        toast.message("Invite created (email skipped)", {
-          description: data.invite.inviteUrl,
-          duration: 12000,
-        });
-      } else {
-        toast.success("Invite created");
-      }
-      await load();
-    } catch (error) {
-      toast.error(formatApiError(error, "Could not send invite"));
-    }
-  }
-
   async function onRevokeInvite(m: GymMemberListItem) {
     const inviteId = m.appAccess?.pendingInviteId;
     if (!inviteId) return;
@@ -368,9 +323,9 @@ function MembersPage() {
           canWrite ? (
             <Button
               className="bg-lime text-lime-foreground hover:bg-lime/90"
-              onClick={openCreateDialog}
+              onClick={openInviteDialog}
             >
-              <Plus className="mr-1 h-4 w-4" /> Add Member
+              <Plus className="mr-1 h-4 w-4" /> Invite member
             </Button>
           ) : undefined
         }
@@ -533,14 +488,7 @@ function MembersPage() {
                                     >
                                       <Ban className="h-4 w-4" /> Revoke app invite
                                     </DropdownMenuItem>
-                                  ) : (
-                                    <DropdownMenuItem
-                                      className="cursor-pointer gap-2"
-                                      onClick={() => void onInviteToApp(m)}
-                                    >
-                                      <Send className="h-4 w-4" /> Invite to app
-                                    </DropdownMenuItem>
-                                  )}
+                                  ) : null}
                                   <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => void onSuspend(m)}>
                                     <Ban className="h-4 w-4" />
                                     {m.status === "suspended" ? "Reactivate" : "Suspend"}
@@ -567,7 +515,7 @@ function MembersPage() {
                         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                           <p className="font-semibold">No members yet</p>
                           <p className="text-sm text-muted-foreground">
-                            {canWrite ? "Add your first member to get started." : "Nothing to show."}
+                            {canWrite ? "Invite a member by email to get started." : "Nothing to show."}
                           </p>
                         </div>
                       </td>
@@ -599,65 +547,35 @@ function MembersPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-display">Add member</DialogTitle>
-            <DialogDescription>Create a gym member profile. Assign a plan from Membership Management.</DialogDescription>
+            <DialogTitle className="font-display">Invite member</DialogTitle>
+            <DialogDescription>
+              Send an email invite. They create their profile when they join the app.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2">
             <div className="grid gap-2">
               <Label>Full name</Label>
-              <Input value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Phone</Label>
               <Input
-                inputMode="numeric"
-                maxLength={10}
-                value={form.phone}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))
-                }
-                placeholder="10-digit mobile"
+                value={form.fullName}
+                onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                placeholder="Member name"
               />
             </div>
             <div className="grid gap-2">
-              <Label>Email (optional)</Label>
-              <Input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>Age</Label>
-                <Input type="number" value={form.age} onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))} />
-              </div>
-              <div className="grid gap-2">
-                <Label>Gender</Label>
-                <Select
-                  value={form.gender || "none"}
-                  onValueChange={(v) => setForm((f) => ({ ...f, gender: v === "none" ? "" : v as MemberGender }))}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Not set</SelectItem>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>Joined at</Label>
+              <Label>Email</Label>
               <Input
-                type="date"
-                value={form.joinDate}
-                onChange={(e) => setForm((f) => ({ ...f, joinDate: e.target.value }))}
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="member@email.com"
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancel</Button>
-            <Button className="bg-lime text-lime-foreground" onClick={() => void submitCreate()} disabled={saving}>
+            <Button className="bg-lime text-lime-foreground" onClick={() => void submitInvite()} disabled={saving}>
               {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-              Create member
+              Send invite
             </Button>
           </DialogFooter>
         </DialogContent>
