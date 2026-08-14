@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { apiRequest, withListPaging } from "@/lib/api";
 import { getAccessToken } from "@/lib/tenant";
 
 export type NoticeTag = "Holiday" | "Update" | "Challenge" | "Offer";
@@ -33,7 +33,7 @@ function tokenOrThrow() {
 }
 
 export async function fetchNotices(status?: NoticeStatus) {
-  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  const qs = withListPaging({ status });
   const res = await apiRequest<ApiSuccess<{ notices: GymNotice[] }>>(
     `/api/owner/notices${qs}`,
     { method: "GET", token: tokenOrThrow() },

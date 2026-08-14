@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { apiRequest, withListPaging } from "@/lib/api";
 import { getAccessToken } from "@/lib/tenant";
 import { fetchMemberDiet, type MemberDietAssignment } from "@/lib/diet-api";
 import { fetchMemberWorkout, type MemberWorkoutAssignment } from "@/lib/workout-api";
@@ -200,10 +200,10 @@ export async function deletePlan(planId: string) {
 }
 
 export async function fetchMembers(params?: { status?: string; q?: string }) {
-  const sp = new URLSearchParams();
-  if (params?.status && params.status !== "all") sp.set("status", params.status);
-  if (params?.q) sp.set("q", params.q);
-  const qs = sp.toString() ? `?${sp}` : "";
+  const qs = withListPaging({
+    status: params?.status && params.status !== "all" ? params.status : undefined,
+    q: params?.q,
+  });
   const res = await apiRequest<ApiSuccess<{ members: GymMemberListItem[] }>>(
     `/api/owner/members${qs}`,
     { method: "GET", token: tokenOrThrow() },
@@ -314,7 +314,7 @@ export async function assignMembership(
 
 export async function fetchExpiringMemberships(days = 7) {
   const res = await apiRequest<ApiSuccess<{ items: ExpiringMembership[] }>>(
-    `/api/owner/members/expiring?days=${days}`,
+    `/api/owner/members/expiring${withListPaging({ days })}`,
     { method: "GET", token: tokenOrThrow() },
   );
   return res.data.items;
@@ -566,7 +566,7 @@ export async function fetchMemberHistory(memberId: string) {
 export async function fetchMemberPayments(memberId: string) {
   const res = await apiRequest<
     ApiSuccess<{ payments: MemberPayment[]; summary: MemberPaymentSummary }>
-  >(`/api/owner/members/${memberId}/payments`, {
+  >(`/api/owner/members/${memberId}/payments${withListPaging()}`, {
     method: "GET",
     token: tokenOrThrow(),
   });
@@ -593,7 +593,7 @@ export async function createMemberPayment(
 
 export async function fetchMemberActivity(memberId: string, limit = 50) {
   const res = await apiRequest<ApiSuccess<{ activities: MemberActivity[] }>>(
-    `/api/owner/members/${memberId}/activity?limit=${limit}`,
+    `/api/owner/members/${memberId}/activity${withListPaging({ pageSize: limit })}`,
     { method: "GET", token: tokenOrThrow() },
   );
   return res.data.activities;
@@ -601,7 +601,7 @@ export async function fetchMemberActivity(memberId: string, limit = 50) {
 
 export async function fetchMemberNotes(memberId: string) {
   const res = await apiRequest<ApiSuccess<{ notes: MemberNote[] }>>(
-    `/api/owner/members/${memberId}/notes`,
+    `/api/owner/members/${memberId}/notes${withListPaging()}`,
     { method: "GET", token: tokenOrThrow() },
   );
   return res.data.notes;

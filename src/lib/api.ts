@@ -126,6 +126,21 @@ export function getApiBaseUrl() {
   return API_BASE_URL;
 }
 
+/** Max page size the backend allows — used until screens grow real pager UI. */
+export const LIST_PAGE_SIZE = 100;
+
+export function withListPaging(params: Record<string, string | number | undefined | null> = {}) {
+  const sp = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    sp.set(key, String(value));
+  }
+  if (!sp.has("page")) sp.set("page", "1");
+  if (!sp.has("pageSize")) sp.set("pageSize", String(LIST_PAGE_SIZE));
+  const qs = sp.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export function formatApiError(error: unknown, fallback = "Something went wrong") {
   if (error instanceof ApiError) {
     if (error.errors?.length) {

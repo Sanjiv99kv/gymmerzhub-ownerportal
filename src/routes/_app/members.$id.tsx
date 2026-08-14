@@ -971,27 +971,38 @@ function MemberDetail() {
                           ))}
                         </div>
                         <div className="space-y-3">
-                          {diet.plan.meals.map((meal, i) => (
-                            <div key={`${meal.name}-${i}`} className="rounded-lg border border-border bg-background/40 px-3 py-2.5">
+                          {(diet.plan.slots || []).map((slot) => (
+                            <div key={slot.id} className="rounded-lg border border-border bg-background/40 px-3 py-2.5">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-xs font-semibold text-muted-foreground">
-                                  {meal.name}
-                                  {meal.time ? <span className="font-normal"> · {meal.time}</span> : null}
+                                  {slot.name}
+                                  {slot.timeHint ? (
+                                    <span className="font-normal"> · {slot.timeHint}</span>
+                                  ) : null}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
-                                  Pick any · ~{meal.targets?.protein ?? 0}g protein
+                                  ~{slot.targets?.protein ?? 0}g protein · {slot.targets?.cal ?? 0} kcal
                                 </span>
                               </div>
                               <ul className="mt-2 space-y-1.5">
-                                {(meal.options || []).map((opt, oi) => (
-                                  <li key={oi} className="text-sm">
-                                    <span className="font-medium">{opt.label}</span>
-                                    <span className="text-muted-foreground">
-                                      {" "}· P {opt.protein}g · C {opt.carbs}g · F {opt.fat}g · {opt.cal} kcal
-                                    </span>
-                                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                                      {opt.items?.join(", ") || "—"}
-                                    </span>
+                                {(slot.items || []).map((item) => (
+                                  <li key={item.id} className="flex items-start gap-2.5 text-sm">
+                                    {item.imageUrl ? (
+                                      <img
+                                        src={item.imageUrl}
+                                        alt={item.name}
+                                        className="mt-0.5 h-8 w-8 shrink-0 rounded-md object-cover border border-border"
+                                      />
+                                    ) : null}
+                                    <div className="min-w-0">
+                                      <span className="font-medium">{item.name}</span>
+                                      <span className="text-muted-foreground">
+                                        {" "}
+                                        · {item.quantity}
+                                        {item.servingUnit} · P {item.protein}g · C {item.carbs}g · F{" "}
+                                        {item.fat}g · {item.calories} kcal
+                                      </span>
+                                    </div>
                                   </li>
                                 ))}
                               </ul>

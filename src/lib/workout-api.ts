@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { apiRequest, withListPaging } from "@/lib/api";
 import { getAccessToken } from "@/lib/tenant";
 
 type ApiSuccess<T> = {
@@ -92,7 +92,7 @@ export type WorkoutPlanInput = {
 };
 
 export async function fetchWorkoutPlans(status?: "active" | "inactive") {
-  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  const qs = withListPaging({ status });
   const res = await apiRequest<ApiSuccess<{ plans: WorkoutPlan[] }>>(
     `/api/owner/workout-plans${qs}`,
     { method: "GET", token: tokenOrThrow() },
@@ -127,7 +127,7 @@ export async function deleteWorkoutPlan(planId: string) {
 
 export async function fetchWorkoutPlanAssignments(planId: string) {
   const res = await apiRequest<ApiSuccess<{ assignments: WorkoutPlanAssignment[] }>>(
-    `/api/owner/workout-plans/${planId}/assignments`,
+    `/api/owner/workout-plans/${planId}/assignments${withListPaging()}`,
     { method: "GET", token: tokenOrThrow() },
   );
   return res.data.assignments;

@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { apiRequest, withListPaging } from "@/lib/api";
 import { getAccessToken } from "@/lib/tenant";
 
 type ApiSuccess<T> = {
@@ -13,33 +13,40 @@ function tokenOrThrow() {
   return token;
 }
 
-export type MealTargets = {
+export type DietSlotTargets = {
   protein: number;
   carbs: number;
   fat: number;
   cal: number;
 };
 
-export type DietMealOption = {
-  label: string;
-  items: string[];
-  protein: number;
-  carbs: number;
-  fat: number;
-  cal: number;
-};
-
-/** Meal slot: hit the target by picking any one option. */
-export type DietMealSlot = {
+export type DietSlotItem = {
+  id: string;
+  foodItemId: string;
+  quantity: number;
+  notes: string | null;
   name: string;
-  time: string;
-  targets: MealTargets;
-  options: DietMealOption[];
+  dietType: string | null;
+  servingUnit: string;
+  servingQty: number;
+  imageUrl: string | null;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+export type DietPlanSlot = {
+  id: string;
+  name: string;
+  timeHint: string;
+  sortOrder: number;
+  targets: DietSlotTargets;
+  items: DietSlotItem[];
 };
 
 export type DietPlan = {
   id: string;
-  gymId: string;
   name: string;
   tag: string;
   goal: string;
@@ -48,7 +55,7 @@ export type DietPlan = {
   carbs: number;
   fat: number;
   water: number;
-  meals: DietMealSlot[];
+  slots: DietPlanSlot[];
   notes: string;
   status: "active" | "inactive";
   assigned: number;
@@ -87,22 +94,11 @@ export type DietPlanAssignment = {
   member: DietPlanAssignmentMember | null;
 };
 
-export type DietPlanInput = {
-  name: string;
-  tag?: string | null;
-  goal?: string | null;
-  cal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  water: number;
-  meals: DietMealSlot[];
-  notes?: string | null;
-  status?: "active" | "inactive";
-};
-
-export async function fetchDietPlans(status?: "active" | "inactive") {
-  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+export async function fetchDietPlans(params?: { status?: "active" | "inactive"; q?: string }) {
+  const qs = withListPaging({
+    status: params?.status,
+    q: params?.q,
+  });
   const res = await apiRequest<ApiSuccess<{ plans: DietPlan[] }>>(
     `/api/owner/diet-plans${qs}`,
     { method: "GET", token: tokenOrThrow() },
@@ -110,34 +106,17 @@ export async function fetchDietPlans(status?: "active" | "inactive") {
   return res.data.plans;
 }
 
-export async function createDietPlan(body: DietPlanInput) {
-  const res = await apiRequest<ApiSuccess<{ plan: DietPlan }>>("/api/owner/diet-plans", {
-    method: "POST",
-    token: tokenOrThrow(),
-    body,
-  });
-  return res.data.plan;
-}
-
-export async function updateDietPlan(planId: string, body: Partial<DietPlanInput>) {
+export async function fetchDietPlan(planId: string) {
   const res = await apiRequest<ApiSuccess<{ plan: DietPlan }>>(
     `/api/owner/diet-plans/${planId}`,
-    { method: "PATCH", token: tokenOrThrow(), body },
+    { method: "GET", token: tokenOrThrow() },
   );
   return res.data.plan;
-}
-
-export async function deleteDietPlan(planId: string) {
-  const res = await apiRequest<ApiSuccess<{ deleted: boolean }>>(
-    `/api/owner/diet-plans/${planId}`,
-    { method: "DELETE", token: tokenOrThrow() },
-  );
-  return res.data;
 }
 
 export async function fetchDietPlanAssignments(planId: string) {
   const res = await apiRequest<ApiSuccess<{ assignments: DietPlanAssignment[] }>>(
-    `/api/owner/diet-plans/${planId}/assignments`,
+    `/api/owner/diet-plans/${planId}/assignments${withListPaging()}`,
     {
       method: "GET",
       token: tokenOrThrow(),
