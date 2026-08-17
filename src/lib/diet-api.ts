@@ -42,7 +42,21 @@ export type DietPlanSlot = {
   timeHint: string;
   sortOrder: number;
   targets: DietSlotTargets;
+  options: DietPlanSlotOption[];
+};
+
+export type DietPlanSlotOption = {
+  id: string;
+  isDefault: boolean;
+  sortOrder: number;
   items: DietSlotItem[];
+};
+
+export type DietPlanDay = {
+  dayIndex: number;
+  /** Weekday label: mon–sun */
+  day?: string;
+  slots: DietPlanSlot[];
 };
 
 export type DietPlan = {
@@ -55,7 +69,8 @@ export type DietPlan = {
   carbs: number;
   fat: number;
   water: number;
-  slots: DietPlanSlot[];
+  /** Present on detail only — omitted from list endpoints. */
+  days?: DietPlanDay[];
   notes: string;
   status: "active" | "inactive";
   assigned: number;
@@ -106,9 +121,10 @@ export async function fetchDietPlans(params?: { status?: "active" | "inactive"; 
   return res.data.plans;
 }
 
-export async function fetchDietPlan(planId: string) {
+export async function fetchDietPlan(planId: string, day: string = "mon") {
+  const qs = new URLSearchParams({ day });
   const res = await apiRequest<ApiSuccess<{ plan: DietPlan }>>(
-    `/api/owner/diet-plans/${planId}`,
+    `/api/owner/diet-plans/${planId}?${qs}`,
     { method: "GET", token: tokenOrThrow() },
   );
   return res.data.plan;

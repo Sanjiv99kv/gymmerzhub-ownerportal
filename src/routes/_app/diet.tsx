@@ -21,6 +21,7 @@ import { hasPermission } from "@/lib/permissions";
 import { getSession } from "@/lib/tenant";
 import {
   assignDietPlan,
+  fetchDietPlan,
   fetchDietPlanAssignments,
   fetchDietPlans,
   unassignMemberDiet,
@@ -28,6 +29,16 @@ import {
   type DietPlanAssignment,
 } from "@/lib/diet-api";
 import { searchMembers, type MemberSearchHit } from "@/lib/membership-api";
+
+const DIET_DAYS = [
+  { key: "mon", label: "Mon" },
+  { key: "tue", label: "Tue" },
+  { key: "wed", label: "Wed" },
+  { key: "thu", label: "Thu" },
+  { key: "fri", label: "Fri" },
+  { key: "sat", label: "Sat" },
+  { key: "sun", label: "Sun" },
+] as const;
 
 export const Route = createFileRoute("/_app/diet")({
   head: () => ({ meta: [{ title: "Diet Plans — GymmerzHub" }] }),
@@ -65,6 +76,8 @@ function DietPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [drawer, setDrawer] = useState<DietPlan | null>(null);
+  const [drawerDay, setDrawerDay] = useState<(typeof DIET_DAYS)[number]["key"]>("mon");
+  const [drawerLoading, setDrawerLoading] = useState(false);
 
   const [assignPlan, setAssignPlan] = useState<DietPlan | null>(null);
   const [memberQuery, setMemberQuery] = useState("");
@@ -125,6 +138,32 @@ function DietPage() {
     }, 250);
     return () => window.clearTimeout(handle);
   }, [assignPlan, memberQuery, selectedMember]);
+
+  async function openDrawer(plan: DietPlan, day: (typeof DIET_DAYS)[number]["key"] = "mon") {
+    setDrawerDay(day);
+    setDrawerLoading(true);
+    try {
+      const detail = await fetchDietPlan(plan.id, day);
+      setDrawer(detail);
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not load diet plan"));
+    } finally {
+      setDrawerLoading(false);
+    }
+  }
+
+  async function selectDrawerDay(day: (typeof DIET_DAYS)[number]["key"]) {
+    if (!drawer || day === drawerDay) return;
+    setDrawerDay(day);
+    setDrawerLoading(true);
+    try {
+      setDrawer(await fetchDietPlan(drawer.id, day));
+    } catch (error) {
+      toast.error(formatApiError(error, "Could not load diet plan day"));
+    } finally {
+      setDrawerLoading(false);
+    }
+  }
 
   function openAssign(p: DietPlan) {
     setAssignPlan(p);
@@ -324,25 +363,14 @@ function DietPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {p.slots.map((slot) => (
-                      <span
-                        key={slot.id}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 px-2.5 py-1 text-xs text-muted-foreground"
-                      >
-                        <Clock className="h-3 w-3 shrink-0 text-primary" />
-                        <span className="font-medium text-foreground">{slot.name}</span>
-                        {slot.timeHint ? <span>· {slot.timeHint}</span> : null}
-                      </span>
-                    ))}
-                  </div>
-
                   <div className="mt-auto flex gap-2 pt-1">
                     <Button
                       variant="outline"
                       className="min-w-0 flex-1 gap-1.5 text-sm"
-                      onClick={() => setDrawer(p)}
+                      disabled={drawerLoading}
+                      onClick={() => void openDrawer(p)}
                     >
+                      {drawerLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                       View Full Plan <ChevronRight className="h-3.5 w-3.5" />
                     </Button>
                     {canWrite ? (
@@ -383,7 +411,7 @@ function DietPage() {
                 ) : null}
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{drawer.goal || "—"}</p>
                 <p className="mt-2 text-xs font-medium text-primary">
-                  Daily target · {drawer.protein}g protein across {drawer.slots.length} meals
+                  Daily average · {drawer.protein}g protein · {drawer.cal} kcal
                 </p>
               </div>
               <Button size="icon" variant="ghost" onClick={() => setDrawer(null)}>
@@ -391,12 +419,35 @@ function DietPage() {
               </Button>
             </div>
 
+            <div className="flex gap-1 overflow-x-auto border-b border-border px-4 py-2">
+              {DIET_DAYS.map((d) => (
+                <Button
+                  key={d.key}
+                  size="sm"
+                  variant={drawerDay === d.key ? "default" : "ghost"}
+                  className="shrink-0"
+                  disabled={drawerLoading}
+                  onClick={() => void selectDrawerDay(d.key)}
+                >
+                  {d.label}
+                </Button>
+              ))}
+            </div>
+
             <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
-              {drawer.slots.map((slot) => (
+              {drawerLoading && !(drawer.days ?? []).length ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : null}
+              {(drawer.days ?? []).flatMap((day) =>
+                day.slots.map((slot) => (
                 <div key={slot.id} className="overflow-hidden rounded-xl border border-border bg-background/40">
                   <div className="flex items-center justify-between border-b border-border bg-background/60 px-4 py-2.5">
                     <div>
-                      <span className="text-sm font-semibold">{slot.name}</span>
+                      <span className="text-sm font-semibold">
+                        {(day.day ?? DIET_DAYS[day.dayIndex - 1]?.key ?? `day ${day.dayIndex}`).toUpperCase()} · {slot.name}
+                      </span>
                       {slot.timeHint ? (
                         <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" /> {slot.timeHint}
@@ -407,8 +458,14 @@ function DietPage() {
                       ~{slot.targets.protein}g protein · {slot.targets.cal} kcal
                     </Badge>
                   </div>
-                  <ul className="space-y-2 px-4 py-3">
-                    {slot.items.map((item) => (
+                  <div className="space-y-3 px-4 py-3">
+                    {slot.options.map((option) => (
+                      <div key={option.id}>
+                        <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
+                          {option.isDefault ? "Default option" : `Alternative ${option.sortOrder}`}
+                        </p>
+                        <ul className="space-y-2">
+                    {option.items.map((item) => (
                       <li
                         key={item.id}
                         className="rounded-lg border border-border/80 bg-card/50 px-3 py-2.5"
@@ -441,9 +498,13 @@ function DietPage() {
                         </div>
                       </li>
                     ))}
-                  </ul>
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )),
+              )}
               {drawer.notes ? (
                 <div className="rounded-xl border border-border bg-background/40 px-4 py-3">
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">

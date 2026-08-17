@@ -1,105 +1,85 @@
 # GymmerzHub Hub
 
-GymmerzHub Hub is a modern gym management dashboard built with React and TanStack Router.  
-It helps gyms manage members, attendance, payments, plans, workouts, diet plans, and revenue analytics from one place.
+Gym owner portal for GymmerzHub. Manage members, attendance, plans, payments, workouts, diet plans, notices, and team from one dashboard.
 
-## Features
+## Stack
 
-- Member management with filters, sorting, status tags, and action menus
-- Detailed member profile with payments, attendance, fitness, plans, communication, and notes
-- Attendance dashboard with KPI cards and GitHub-style heatmap
-- Membership plan and discount management
-- Payments tracking with transaction views
-- Revenue analytics with charts, trends, and plan performance
-- Workout programs with structured day-by-day schedules
-- Diet plan management with add/edit/remove workflows
-
-## Tech Stack
-
-- React 19
-- TypeScript
+- React 19 + TypeScript + Vite
 - TanStack Router + TanStack Query
-- Vite
-- Tailwind CSS
-- Radix UI
-- Recharts
-- Lucide React Icons
-- Sonner (toast notifications)
+- Tailwind CSS v4
+- Radix UI + Recharts
 
-## Project Structure
+## Quick start
 
 ```bash
-src/
-  components/        # Shared UI + layout components
-  lib/               # Data, helpers, utilities
-  routes/            # Route pages
-  styles.css         # Global styles
-public/
-  favicon.svg
-```
-
-## Getting Started
-
-### 1) Install dependencies
-
-```bash
+cp .env.example .env
 npm install
-```
-
-### 2) Start development server
-
-```bash
 npm run dev
 ```
 
-### 3) Build for production
+Dev server: `http://localhost:5173`  
+API default: `http://localhost:8800` (see `VITE_API_BASE_URL`)
+
+Requires [gymmerzhub-backend](../gymmerzhub-backend) running locally.
+
+## Environment
 
 ```bash
-npm run build
+VITE_API_BASE_URL=http://localhost:8800
 ```
 
-### 4) Preview production build
-
-```bash
-npm run preview
-```
+Register or log in as a gym owner against the backend. Staff can join via invite links (`/invite/:token`). Member invites use `/member-invite/:token`.
 
 ## Scripts
 
-- `npm run dev` - Run local development server
-- `npm run build` - Create production build
-- `npm run build:dev` - Create development-mode build
-- `npm run preview` - Preview production build locally
-- `npm run lint` - Run ESLint
-- `npm run format` - Run Prettier
+```bash
+npm run dev          # local dev
+npm run build        # production build
+npm run build:dev   # development-mode build
+npm run preview      # preview production build
+npm run lint
+npm run format
+```
 
-## Main Routes
+## Features
 
-- `/` - Dashboard
-- `/members` - Members list
-- `/members/$id` - Member detail
-- `/attendance` - Attendance tracking
-- `/plans` - Membership and discounts
-- `/payments` - Payments
-- `/revenue` - Revenue analytics
-- `/workouts` - Workout plans
-- `/diet` - Diet plans
-- `/reports`, `/notices`, `/settings`, `/trainers`
+- Member management, profiles, and join approvals
+- Attendance dashboard
+- Membership plans and discounts
+- Payments and revenue views
+- Workout and diet plan assignment
+- Notices, trainers, roles, and team invites
+- Revenue share for linked member platform subscriptions
 
-## Notes
+## Main routes
 
-- Current data is seeded/demo data from `src/lib/data.ts`.
-- Most screens are UI-ready and can be connected to backend APIs.
-- App metadata and favicon are configured in `src/routes/__root.tsx` and `public/favicon.svg`.
+| Path | Purpose |
+|------|---------|
+| `/login`, `/register` | Owner auth |
+| `/invite/$token` | Staff invite accept |
+| `/member-invite/$token` | Member invite accept |
+| `/` | Dashboard |
+| `/members`, `/members/$id` | Members |
+| `/approvals` | Join requests |
+| `/attendance` | Attendance |
+| `/plans` | Membership plans |
+| `/payments`, `/revenue`, `/revenue-share` | Money |
+| `/workouts`, `/diet` | Plans |
+| `/notices`, `/trainers`, `/team`, `/roles` | Ops |
+| `/reports`, `/settings`, `/profile` | Reports & account |
 
-## Roadmap
+## Project layout
 
-- Backend integration for persistent data
-- Role-based access (admin/staff/trainer)
-- Real-time attendance and payment updates
-- Exportable reports, invoices, and receipts
-- Notification channels (WhatsApp, SMS, Email)
+```
+src/
+  components/     # Layout, UI, feature components
+  lib/            # API, auth/session, permissions, helpers
+  routes/         # File-based routes (_app + auth)
+public/
+```
 
-## License
+## Related repos
 
-Private project for internal or business use.
+- `gymmerzhub-backend` — API
+- `gymmerzhub-admin` — platform ops console
+- `gymmerzhub-launch` — marketing site

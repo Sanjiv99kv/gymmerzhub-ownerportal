@@ -971,11 +971,11 @@ function MemberDetail() {
                           ))}
                         </div>
                         <div className="space-y-3">
-                          {(diet.plan.slots || []).map((slot) => (
+                          {(diet.plan.days || []).flatMap((day) => day.slots.map((slot) => (
                             <div key={slot.id} className="rounded-lg border border-border bg-background/40 px-3 py-2.5">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-xs font-semibold text-muted-foreground">
-                                  {slot.name}
+                                  Day {day.dayIndex} · {slot.name}
                                   {slot.timeHint ? (
                                     <span className="font-normal"> · {slot.timeHint}</span>
                                   ) : null}
@@ -984,8 +984,14 @@ function MemberDetail() {
                                   ~{slot.targets?.protein ?? 0}g protein · {slot.targets?.cal ?? 0} kcal
                                 </span>
                               </div>
-                              <ul className="mt-2 space-y-1.5">
-                                {(slot.items || []).map((item) => (
+                              <div className="mt-2 space-y-2.5">
+                                {(slot.options || []).map((option) => (
+                                  <div key={option.id}>
+                                    <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+                                      {option.isDefault ? "Default option" : `Alternative ${option.sortOrder}`}
+                                    </p>
+                                    <ul className="space-y-1.5">
+                                {option.items.map((item) => (
                                   <li key={item.id} className="flex items-start gap-2.5 text-sm">
                                     {item.imageUrl ? (
                                       <img
@@ -1005,9 +1011,12 @@ function MemberDetail() {
                                     </div>
                                   </li>
                                 ))}
-                              </ul>
+                                    </ul>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          ))}
+                          )))}
                         </div>
                         {diet.plan.notes ? (
                           <p className="text-xs text-muted-foreground leading-relaxed">{diet.plan.notes}</p>
